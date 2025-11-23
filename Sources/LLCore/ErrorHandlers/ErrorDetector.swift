@@ -10,8 +10,10 @@ import LLApiService
 
 /// Detects application-level errors in response body even when HTTP status is 200
 /// Different exchanges have different error response formats
-struct BybitErrorDetector: LLDomainErrorDetector {
-    func detectError(data: Data, response: URLResponse) throws {
+public struct BybitErrorDetector: LLDomainErrorDetector {
+    public init() {}
+    
+    public func detectError(data: Data, response: URLResponse) throws {
         let exchange: ExchangeType = .bybit(walletType: .unified)
         let endpoint: String = (response as? HTTPURLResponse)?.url?.absoluteString ?? "Bybit Endpoint"
         
@@ -52,8 +54,10 @@ struct BybitErrorDetector: LLDomainErrorDetector {
     }
 }
 
-struct KucoinErrorDetector: LLDomainErrorDetector {
-    func detectError(data: Data, response: URLResponse) throws {
+public struct KucoinErrorDetector: LLDomainErrorDetector {
+    public init() {}
+    
+    public func detectError(data: Data, response: URLResponse) throws {
         let exchange: ExchangeType = .kucoin(walletType: .futures)
         let endpoint: String = (response as? HTTPURLResponse)?.url?.absoluteString ?? "Kucoin Endpoint"
         
@@ -92,8 +96,10 @@ struct KucoinErrorDetector: LLDomainErrorDetector {
     }
 }
 
-struct BinanceErrorDetector: LLDomainErrorDetector {
-    func detectError(data: Data, response: URLResponse) throws {
+public struct BinanceErrorDetector: LLDomainErrorDetector {
+    public init() {}
+    
+    public func detectError(data: Data, response: URLResponse) throws {
         let exchange: ExchangeType = .binance(walletType: .futures)
         let endpoint: String = (response as? HTTPURLResponse)?.url?.absoluteString ?? "Binance Endpoint"
         
@@ -132,8 +138,8 @@ struct BinanceErrorDetector: LLDomainErrorDetector {
     }
 }
 
-struct AplicationErrorDetectorFactory {
-    static func build(for exchangeType: ExchangeType) -> LLDomainErrorDetector? {
+public struct AplicationErrorDetectorFactory {
+    public static func build(for exchangeType: ExchangeType) -> LLDomainErrorDetector? {
 
         switch exchangeType {
         case .bybit:

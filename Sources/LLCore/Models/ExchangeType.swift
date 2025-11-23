@@ -5,7 +5,7 @@
 //  Created by Aleh Fiodarau on 30/09/2025.
 //
 
-enum ExchangeName: String, CaseIterable, Hashable {
+public enum ExchangeName: String, CaseIterable, Hashable {
     case bybit
     case kucoin
     case binance
@@ -13,7 +13,7 @@ enum ExchangeName: String, CaseIterable, Hashable {
 }
 
 // keep this for mapping ExchangeType to ExchangeName and to make sure we have a single source of truth
-extension ExchangeType {
+public extension ExchangeType {
     var exchangeName: ExchangeName {
         switch self {
         case .bybit: return .bybit
@@ -23,12 +23,12 @@ extension ExchangeType {
     }
 }
 
-enum WalletType: String, CaseIterable, Hashable {
+public enum WalletType: String, CaseIterable, Hashable {
     case spot, futures, unified
 }
 
-enum ExchangeType: Hashable, CaseIterable {
-    static var allCases: [ExchangeType] {
+public enum ExchangeType: Hashable, CaseIterable {
+    public static var allCases: [ExchangeType] {
         return [
             .bybit(walletType: .spot),
             .kucoin(walletType: .spot),
@@ -40,13 +40,13 @@ enum ExchangeType: Hashable, CaseIterable {
     case kucoin (walletType: WalletType)
     case binance (walletType: WalletType) //, coinbase, kraken
     
-    var walletType: WalletType {
+    public var walletType: WalletType {
         switch self {
         case .bybit(let w), .kucoin(let w), .binance(let w): return w
         }
     }
     
-    var availableWalletTypes: [WalletType] {
+    public var availableWalletTypes: [WalletType] {
         switch self {
         case .bybit:
             return [.unified]
@@ -57,7 +57,7 @@ enum ExchangeType: Hashable, CaseIterable {
         }
     }
     
-    var displayName: String {
+    public var displayName: String {
         switch self {
         case .bybit:
             return "bybit"
@@ -68,7 +68,7 @@ enum ExchangeType: Hashable, CaseIterable {
         }
     }
     
-    var baseURL: String {
+    public var baseURL: String {
         switch self {
         case .bybit (let walletType):
             switch walletType {
@@ -100,7 +100,7 @@ enum ExchangeType: Hashable, CaseIterable {
         }
     }
     
-    var endpoint: String {
+    public var endpoint: String {
         switch self {
         case .bybit:
             switch walletType {
@@ -132,7 +132,7 @@ enum ExchangeType: Hashable, CaseIterable {
         }
     }
     
-    static func make(_ name: ExchangeName, wallet: WalletType) -> ExchangeType {
+    public static func make(_ name: ExchangeName, wallet: WalletType) -> ExchangeType {
         switch name {
         case .bybit:   return .bybit(walletType: wallet)
         case .kucoin:  return .kucoin(walletType: wallet)
@@ -142,7 +142,7 @@ enum ExchangeType: Hashable, CaseIterable {
 }
 
 
-extension ExchangeType: Equatable {
+public extension ExchangeType {
     static func == (lhs: ExchangeType, rhs: ExchangeType) -> Bool {
         switch (lhs, rhs) {
         case let (.bybit(a),   .bybit(b)),

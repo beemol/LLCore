@@ -12,12 +12,18 @@ import Foundation
 import LLApiService
 
 /// Composite error detector that checks HTTP status first, then delegates to app-level detector
-struct HTTPStatusErrorDetector: LLDomainErrorDetector {
-    let exchange: ExchangeType
-    let endpoint: String
-    let appLevelDetector: LLDomainErrorDetector?
+public struct HTTPStatusErrorDetector: LLDomainErrorDetector {
+    public let exchange: ExchangeType
+    public let endpoint: String
+    public let appLevelDetector: LLDomainErrorDetector?
     
-    func detectError(data: Data, response: URLResponse) throws {
+    public init(exchange: ExchangeType, endpoint: String, appLevelDetector: LLDomainErrorDetector?) {
+        self.exchange = exchange
+        self.endpoint = endpoint
+        self.appLevelDetector = appLevelDetector
+    }
+    
+    public func detectError(data: Data, response: URLResponse) throws {
         guard let httpResponse = response as? HTTPURLResponse else {
             // This should never happen for REST API calls
             // If we get here, it means we're not using HTTP/HTTPS protocol
