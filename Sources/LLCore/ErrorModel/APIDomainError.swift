@@ -7,12 +7,12 @@
 
 import Foundation
 
-enum APIError: Error {
+public enum APIError: Error {
     case invalidRequest
     case noData
     case parseError
     
-    var localizedDescription: String {
+    public var localizedDescription: String {
         switch self {
         case .invalidRequest:
             return "Invalid API request"
@@ -25,7 +25,7 @@ enum APIError: Error {
 }
 
 /// High-level API error taxonomy for user-facing messaging.
-enum APIDomainError: Error, Equatable {
+public enum APIDomainError: Error, Equatable {
     case invalidCredentials(context: APIErrorContext)
     case permissionDenied(context: APIErrorContext)
     case ipNotAllowed(context: APIErrorContext)
@@ -41,15 +41,15 @@ enum APIDomainError: Error, Equatable {
 }
 
 /// Additional metadata for diagnostics and analytics (no secrets).
-struct APIErrorContext: Equatable {
-    let exchange: ExchangeType
-    let httpStatus: Int?
-    let apiCode: String?
-    let requestId: String?
-    let endpoint: String?
-    let rawMessage: String?
+public struct APIErrorContext: Equatable {
+    public let exchange: ExchangeType
+    public let httpStatus: Int?
+    public let apiCode: String?
+    public let requestId: String?
+    public let endpoint: String?
+    public let rawMessage: String?
 
-    init(
+    public init(
         exchange: ExchangeType,
         httpStatus: Int? = nil,
         apiCode: String? = nil,
@@ -66,7 +66,7 @@ struct APIErrorContext: Equatable {
     }
 }
 
-extension APIDomainError {
+public extension APIDomainError {
     /// Localizable message keys for each error case; UI layer can look up strings.
     var messageKey: String {
         switch self {
@@ -105,7 +105,7 @@ extension APIDomainError {
     }
 }
 
-extension APIDomainError {
+public extension APIDomainError {
     /// Human-readable, concise, and actionable message for display.
     /// Replace with proper localization lookup using `messageKey` when strings are added.
     var userMessage: String {

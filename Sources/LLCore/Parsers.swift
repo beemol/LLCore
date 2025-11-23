@@ -11,11 +11,11 @@ import CommonCrypto
 import LLApiService
 
 // MARK: - WalletDataParser Protocol
-protocol WalletDataParserProtocol: LLResponseParserProtocol where Output == BBWalletData {
+public protocol WalletDataParserProtocol: LLResponseParserProtocol where Output == BBWalletData {
     func parseWalletBalance(from data: Data) -> BBWalletData?
 }
 
-extension WalletDataParserProtocol {
+public extension WalletDataParserProtocol {
     func parse(data: Data) throws -> BBWalletData {
         guard let result = parseWalletBalance(from: data) else {
             throw APIError.parseError
@@ -25,7 +25,7 @@ extension WalletDataParserProtocol {
 }
 
 // MARK: - Enhanced Parser Protocol for Detailed Information
-protocol EnhancedWalletDataParserProtocol: WalletDataParserProtocol {
+public protocol EnhancedWalletDataParserProtocol: WalletDataParserProtocol {
     func parseDetailedWalletBalance(from data: Data) -> BBWalletDataEnhanced?
 }
 
@@ -54,8 +54,10 @@ private func bybitParseTotals(_ result: [String: Any]) -> BBWalletData? {
     return nil
 }
 
-struct BybitSpotWalletDataParser: WalletDataParserProtocol {
-    func parseWalletBalance(from data: Data) -> BBWalletData? {
+public struct BybitSpotWalletDataParser: WalletDataParserProtocol {
+    public init() {}
+    
+    public func parseWalletBalance(from data: Data) -> BBWalletData? {
         do {
             guard let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
                   let result = json["result"] as? [String: Any] else {
@@ -70,8 +72,10 @@ struct BybitSpotWalletDataParser: WalletDataParserProtocol {
     }
 }
 
-struct BybitUnifiedWalletDataParser: WalletDataParserProtocol {
-    func parseWalletBalance(from data: Data) -> BBWalletData? {
+public struct BybitUnifiedWalletDataParser: WalletDataParserProtocol {
+    public init() {}
+    
+    public func parseWalletBalance(from data: Data) -> BBWalletData? {
         do {
             guard let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
                   let result = json["result"] as? [String: Any] else {
@@ -87,14 +91,14 @@ struct BybitUnifiedWalletDataParser: WalletDataParserProtocol {
 }
 
 // MARK: - KuCoin Parser
-struct KuCoinWalletDataParser: WalletDataParserProtocol, EnhancedWalletDataParserProtocol {
-    let walletType: WalletType
+public struct KuCoinWalletDataParser: WalletDataParserProtocol, EnhancedWalletDataParserProtocol {
+    public let walletType: WalletType
     
-    init(walletType: WalletType = .spot) {
+    public init(walletType: WalletType = .spot) {
         self.walletType = walletType
     }
     
-    func parseWalletBalance(from data: Data) -> BBWalletData? {
+    public func parseWalletBalance(from data: Data) -> BBWalletData? {
         do {
             guard let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
                 print("KuCoin JSON Parse Error: Invalid data structure")
@@ -168,7 +172,7 @@ struct KuCoinWalletDataParser: WalletDataParserProtocol, EnhancedWalletDataParse
         return parseSpotWalletBalance(from: json)
     }
     
-    func parseDetailedWalletBalance(from data: Data) -> BBWalletDataEnhanced? {
+    public func parseDetailedWalletBalance(from data: Data) -> BBWalletDataEnhanced? {
         do {
             guard let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
                   let dataArray = json["data"] as? [[String: Any]] else {
@@ -314,8 +318,10 @@ struct KuCoinWalletDataParser: WalletDataParserProtocol, EnhancedWalletDataParse
 }
 
 // MARK: - Binance Parser
-struct BinanceWalletDataParser: WalletDataParserProtocol {
-    func parseWalletBalance(from data: Data) -> BBWalletData? {
+public struct BinanceWalletDataParser: WalletDataParserProtocol {
+    public init() {}
+    
+    public func parseWalletBalance(from data: Data) -> BBWalletData? {
         do {
             guard let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
                 return nil
@@ -359,8 +365,8 @@ struct BinanceWalletDataParser: WalletDataParserProtocol {
     }
 }
 
-struct WalletDataParserFactory {
-    static func parser(for exchange: ExchangeType) -> any WalletDataParserProtocol {
+public struct WalletDataParserFactory {
+    public static func parser(for exchange: ExchangeType) -> any WalletDataParserProtocol {
         switch exchange {
         case .bybit(let walletType):
             switch walletType {
@@ -379,7 +385,7 @@ struct WalletDataParserFactory {
     }
 }
 
-extension String {
+public extension String {
     func hmacSHA256(key: String) -> String {
         guard let keyData = key.data(using: .utf8),
               let messageData = self.data(using: .utf8) else {

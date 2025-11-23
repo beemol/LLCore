@@ -9,32 +9,32 @@ import Foundation
 
 import LLApiService
 
-protocol CredentialManagerProtocol: Actor {
+public protocol CredentialManagerProtocol: Actor {
     func getCredentials(forAccount account: String) async throws -> Credentials
     func saveCredentials(key: String, secret: String, passphrase: String, forAccount account: String) async -> OSStatus
     func deleteCredentials(forAccount account: String) async -> OSStatus
 }
 
-protocol APIRequestBuilder: LLAPIRequestBuilder {
+public protocol APIRequestBuilder: LLAPIRequestBuilder {
     func createWalletBalanceRequest() -> URLRequest?
 }
 
-extension APIRequestBuilder {
+public extension APIRequestBuilder {
     func createRequest() throws -> URLRequest {
         return createWalletBalanceRequest() ?? URLRequest(url: URL(string: "")!)
     }
 }
 
-struct BybitAPIRequestBuilder: APIRequestBuilder {
-    let exchangeType: ExchangeType
-    let creds: Credentials
+public struct BybitAPIRequestBuilder: APIRequestBuilder {
+    public let exchangeType: ExchangeType
+    public let creds: Credentials
     
-    init(exchangeType: ExchangeType, creds: Credentials) {
+    public init(exchangeType: ExchangeType, creds: Credentials) {
         self.exchangeType = exchangeType
         self.creds = creds
     }
     
-    func createWalletBalanceRequest() -> URLRequest? {
+    public func createWalletBalanceRequest() -> URLRequest? {
         // Use endpoint as-is; it already contains the accountType query for spot/unified
         let urlString = exchangeType.baseURL + exchangeType.endpoint
         guard let url = URL(string: urlString) else { return nil }
@@ -55,17 +55,17 @@ struct BybitAPIRequestBuilder: APIRequestBuilder {
     }
 }
 
-struct KuCoinAPIRequestBuilder: APIRequestBuilder {
-    let exchangeType: ExchangeType
-    let creds: Credentials
-    let apiVersion: String = "3"
+public struct KuCoinAPIRequestBuilder: APIRequestBuilder {
+    public let exchangeType: ExchangeType
+    public let creds: Credentials
+    public let apiVersion: String = "3"
     
-    init(exchangeType: ExchangeType, creds: Credentials) {
+    public init(exchangeType: ExchangeType, creds: Credentials) {
         self.exchangeType = exchangeType
         self.creds = creds
     }
     
-    func createWalletBalanceRequest() -> URLRequest? {
+    public func createWalletBalanceRequest() -> URLRequest? {
         let urlString = exchangeType.baseURL + exchangeType.endpoint
         guard let url = URL(string: urlString) else { return nil }
         let timestamp = String(Int(Date().timeIntervalSince1970 * 1000))
@@ -116,16 +116,16 @@ struct KuCoinAPIRequestBuilder: APIRequestBuilder {
     }
 }
 
-struct BinanceAPIRequestBuilder: APIRequestBuilder {
-    let exchangeType: ExchangeType
-    let creds: Credentials
+public struct BinanceAPIRequestBuilder: APIRequestBuilder {
+    public let exchangeType: ExchangeType
+    public let creds: Credentials
     
-    init(exchangeType: ExchangeType, creds: Credentials) {
+    public init(exchangeType: ExchangeType, creds: Credentials) {
         self.exchangeType = exchangeType
         self.creds = creds
     }
     
-    func createWalletBalanceRequest() -> URLRequest? {
+    public func createWalletBalanceRequest() -> URLRequest? {
         // Binance USDT-M Futures account (equity) endpoint
         // GET /fapi/v2/account with signed query: timestamp & optional recvWindow
         let timestamp = String(Int(Date().timeIntervalSince1970 * 1000))
@@ -143,8 +143,9 @@ struct BinanceAPIRequestBuilder: APIRequestBuilder {
     }
 }
 
-struct APIRequestBuilderFactory {
-    static func builder(for exchangeType: ExchangeType, creds: CredentialManagerProtocol) async -> APIRequestBuilder? {
+@MainActor
+public struct APIRequestBuilderFactory {
+    public static func builder(for exchangeType: ExchangeType, creds: CredentialManagerProtocol) async -> APIRequestBuilder? {
         let accountName = exchangeType.displayName
 
         guard let credentials = try? await creds.getCredentials(forAccount: accountName) else { return nil }
@@ -161,7 +162,7 @@ struct APIRequestBuilderFactory {
 }
 
 // Helper function to convert hex string to Data
-func hexStringToData(_ hexString: String) -> Data {
+public func hexStringToData(_ hexString: String) -> Data {
     let len = hexString.count / 2
     var data = Data(capacity: len)
     for i in 0..<len {

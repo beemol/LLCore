@@ -7,21 +7,27 @@
 
 import Foundation
 
-struct APIErrorMapper {
-    struct ParsedErrorBody {
-        let code: String?
-        let message: String?
-        let requestId: String?
+public struct APIErrorMapper {
+    public struct ParsedErrorBody {
+        public let code: String?
+        public let message: String?
+        public let requestId: String?
+        
+        public init(code: String?, message: String?, requestId: String?) {
+            self.code = code
+            self.message = message
+            self.requestId = requestId
+        }
     }
 
     /// Maps a transport/network error into domain error when no HTTP response is available.
-    static func mapNetworkError(_ error: Error, exchange: ExchangeType, endpoint: String?) -> APIDomainError {
+    public static func mapNetworkError(_ error: Error, exchange: ExchangeType, endpoint: String?) -> APIDomainError {
         let context = APIErrorContext(exchange: exchange, httpStatus: nil, apiCode: nil, requestId: nil, endpoint: endpoint, rawMessage: error.localizedDescription)
         return .network(context: context)
     }
 
     /// Maps an HTTP response + body into a domain error; returns nil for status 200.
-    static func mapHTTPResponse(exchange: ExchangeType, endpoint: String?, data: Data, response: HTTPURLResponse) -> APIDomainError? {
+    public static func mapHTTPResponse(exchange: ExchangeType, endpoint: String?, data: Data, response: HTTPURLResponse) -> APIDomainError? {
         let status = response.statusCode
         guard status != 200 else { return nil }
 
