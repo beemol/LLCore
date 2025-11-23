@@ -1,0 +1,15 @@
+{
+  "originHash" : "4f648e2427dbc8c5d1e0e06a2511dcaeb68afd5ca791fe22e9eacdf1822b0f44",
+  "pins" : [
+    {
+      "identity" : "llapiservice",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/beemol/LLApiService.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "1fe2593545532f2fd99aff41b09900bb8524b391"
+      }
+    }
+  ],
+  "version" : 3
+}
