@@ -1,12 +1,15 @@
 //
 //  HTTPStatusErrorDetector.swift
-//  bbticker
+//  LLCore
 //
+//  Created by Aleh Fiodarau on 20/11/2025.
+//
+
+
 //  Composite error detector that handles both HTTP status errors and application-level errors.
 //  This provides a flat, sequential error checking pipeline:
 //  1. Check HTTP status codes (401, 403, 500, etc.)
 //  2. Check application-level errors in response body (even with HTTP 200)
-//
 
 import Foundation
 import LLApiService

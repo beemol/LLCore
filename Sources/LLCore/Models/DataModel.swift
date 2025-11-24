@@ -1,6 +1,6 @@
 //
 //  BBWalletData.swift
-//  bbticker
+//  LLCore
 //
 //  Created by Aleh Fiodarau on 13/07/2025.
 //
@@ -12,7 +12,7 @@ import Network
 import SwiftUI
 
 // MARK: Public data models
-public struct BBWalletData {
+public struct WalletData {
     public let totalEquity: String
     public let walletBalance: String
     

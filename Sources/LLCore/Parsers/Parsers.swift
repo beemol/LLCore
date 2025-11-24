@@ -10,12 +10,12 @@ import Foundation
 import LLApiService
 
 // MARK: - WalletDataParser Protocol
-public protocol WalletDataParserProtocol: LLResponseParserProtocol where Output == BBWalletData {
-    func parseWalletBalance(from data: Data) -> BBWalletData?
+public protocol WalletDataParserProtocol: LLResponseParserProtocol where Output == WalletData {
+    func parseWalletBalance(from data: Data) -> WalletData?
 }
 
 public extension WalletDataParserProtocol {
-    func parse(data: Data) throws -> BBWalletData {
+    func parse(data: Data) throws -> WalletData {
         guard let result = parseWalletBalance(from: data) else {
             throw APIError.parseError
         }
@@ -55,7 +55,7 @@ public struct WalletDataParserFactory {
 public struct BybitSpotWalletDataParser: WalletDataParserProtocol {
     public init() {}
     
-    public func parseWalletBalance(from data: Data) -> BBWalletData? {
+    public func parseWalletBalance(from data: Data) -> WalletData? {
         do {
             guard let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
                   let result = json["result"] as? [String: Any] else {
@@ -73,7 +73,7 @@ public struct BybitSpotWalletDataParser: WalletDataParserProtocol {
 public struct BybitUnifiedWalletDataParser: WalletDataParserProtocol {
     public init() {}
     
-    public func parseWalletBalance(from data: Data) -> BBWalletData? {
+    public func parseWalletBalance(from data: Data) -> WalletData? {
         do {
             guard let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
                   let result = json["result"] as? [String: Any] else {
@@ -89,7 +89,7 @@ public struct BybitUnifiedWalletDataParser: WalletDataParserProtocol {
 }
 
 // Shared helpers to avoid duplication between spot and unified parsers
-private func bybitParseUSDTFromCoins(_ result: [String: Any]) -> BBWalletData? {
+private func bybitParseUSDTFromCoins(_ result: [String: Any]) -> WalletData? {
     if let list = result["list"] as? [[String: Any]],
        let first = list.first,
        let coins = first["coin"] as? [[String: Any]],
@@ -98,15 +98,15 @@ private func bybitParseUSDTFromCoins(_ result: [String: Any]) -> BBWalletData? {
             ?? (usdtCoin["availableToWithdraw"] as? String)
             ?? "0"
         let totalEquityValue = (usdtCoin["equity"] as? String) ?? walletBalanceValue
-        return BBWalletData(totalEquity: totalEquityValue, walletBalance: walletBalanceValue)
+        return WalletData(totalEquity: totalEquityValue, walletBalance: walletBalanceValue)
     }
     return nil
 }
 
-private func bybitParseTotals(_ result: [String: Any]) -> BBWalletData? {
+private func bybitParseTotals(_ result: [String: Any]) -> WalletData? {
     if let totalEquity = result["totalEquity"] as? String,
        let totalWalletBalance = result["totalWalletBalance"] as? String {
-        return BBWalletData(totalEquity: totalEquity, walletBalance: totalWalletBalance)
+        return WalletData(totalEquity: totalEquity, walletBalance: totalWalletBalance)
     }
     return nil
 }
@@ -119,7 +119,7 @@ public struct KuCoinWalletDataParser: WalletDataParserProtocol {
         self.walletType = walletType
     }
     
-    public func parseWalletBalance(from data: Data) -> BBWalletData? {
+    public func parseWalletBalance(from data: Data) -> WalletData? {
         do {
             guard let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
                 print("KuCoin JSON Parse Error: Invalid data structure")
@@ -143,7 +143,7 @@ public struct KuCoinWalletDataParser: WalletDataParserProtocol {
     
     // MARK: - Spot Wallet Parsing
     
-    private func parseSpotWalletBalance(from json: [String: Any]) -> BBWalletData? {
+    private func parseSpotWalletBalance(from json: [String: Any]) -> WalletData? {
         guard let dataArray = json["data"] as? [[String: Any]] else {
             print("KuCoin Spot: Invalid data structure")
             return nil
@@ -165,12 +165,12 @@ public struct KuCoinWalletDataParser: WalletDataParserProtocol {
         let walletBalance = usdtBalance?.totalAvailable.description ?? "0.00"
         let totalEquity = totalPortfolioValue.description
         
-        return BBWalletData(totalEquity: totalEquity, walletBalance: walletBalance)
+        return WalletData(totalEquity: totalEquity, walletBalance: walletBalance)
     }
     
     // MARK: - Futures Wallet Parsing
     
-    private func parseFuturesWalletBalance(from json: [String: Any]) -> BBWalletData? {
+    private func parseFuturesWalletBalance(from json: [String: Any]) -> WalletData? {
         // Parse the actual futures response structure
         if let data = json["data"] as? [String: Any],
            let accountEquity = data["accountEquity"] as? Double,
@@ -185,7 +185,7 @@ public struct KuCoinWalletDataParser: WalletDataParserProtocol {
             print("KuCoin  Account Equity: \(totalEquity)")
             print("KuCoin  Available Balance: \(walletBalance)")
             
-            return BBWalletData(totalEquity: totalEquity, walletBalance: walletBalance)
+            return WalletData(totalEquity: totalEquity, walletBalance: walletBalance)
         }
         
         // Fallback: try to parse as spot format if futures uses similar structure
@@ -342,7 +342,7 @@ public struct KuCoinWalletDataParser: WalletDataParserProtocol {
 public struct BinanceWalletDataParser: WalletDataParserProtocol {
     public init() {}
     
-    public func parseWalletBalance(from data: Data) -> BBWalletData? {
+    public func parseWalletBalance(from data: Data) -> WalletData? {
         do {
             guard let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
                 return nil
@@ -353,7 +353,7 @@ public struct BinanceWalletDataParser: WalletDataParserProtocol {
             // totalWalletBalance = wallet balance (excludes unrealized PnL)
             if let totalMarginBalance = valueAsString(json["totalMarginBalance"]),
                let totalWalletBalance = valueAsString(json["totalWalletBalance"]) {
-                return BBWalletData(totalEquity: totalMarginBalance, walletBalance: totalWalletBalance)
+                return WalletData(totalEquity: totalMarginBalance, walletBalance: totalWalletBalance)
             }
 
             // Fallback: spot account structure (GET /api/v3/account)

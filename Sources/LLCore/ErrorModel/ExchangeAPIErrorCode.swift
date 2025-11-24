@@ -1,6 +1,6 @@
 //
 //  ExchangeAPIErrorCode.swift
-//  bbticker
+//  LLCore
 //
 //  Per-exchange API error code registries mapping to APIDomainError categories.
 //

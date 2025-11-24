@@ -1,6 +1,6 @@
 //
 //  APIDomainError.swift
-//  bbticker
+//  LLCore
 //
 //  Introduces a unified domain error for REST API failures with localized messaging keys.
 //
