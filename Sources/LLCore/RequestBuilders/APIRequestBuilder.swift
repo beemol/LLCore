@@ -6,7 +6,6 @@
 //
 
 import Foundation
-
 import LLApiService
 
 public protocol CredentialManagerProtocol: Actor {
@@ -25,7 +24,26 @@ public extension APIRequestBuilder {
     }
 }
 
-public struct BybitAPIRequestBuilder: APIRequestBuilder {
+@MainActor
+public struct APIRequestBuilderFactory {
+    public static func builder(for exchangeType: ExchangeType, creds: CredentialManagerProtocol) async -> APIRequestBuilder? {
+        let accountName = exchangeType.displayName
+
+        guard let credentials = try? await creds.getCredentials(forAccount: accountName) else { return nil }
+
+        switch exchangeType {
+        case .bybit:
+            return BybitAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
+        case .kucoin:
+            return KuCoinAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
+        case .binance:
+            return BinanceAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
+        }
+    }
+}
+
+// MARK: concrete implementations
+struct BybitAPIRequestBuilder: APIRequestBuilder {
     public let exchangeType: ExchangeType
     public let creds: Credentials
     
@@ -55,7 +73,7 @@ public struct BybitAPIRequestBuilder: APIRequestBuilder {
     }
 }
 
-public struct KuCoinAPIRequestBuilder: APIRequestBuilder {
+struct KuCoinAPIRequestBuilder: APIRequestBuilder {
     public let exchangeType: ExchangeType
     public let creds: Credentials
     public let apiVersion: String = "3"
@@ -101,22 +119,11 @@ public struct KuCoinAPIRequestBuilder: APIRequestBuilder {
         request.setValue(requestPassphrase, forHTTPHeaderField: "KC-API-PASSPHRASE")
         request.setValue(apiVersion, forHTTPHeaderField: "KC-API-KEY-VERSION")
         
-        // Debug logging
-//        print("KuCoin API v\(apiVersion) Request Details:")
-//        print("  Wallet Type: \(walletType.displayName)")
-//        print("  URL: \(urlString)")
-//        print("  Timestamp: \(timestamp)")
-//        print("  Signature Payload: \(signaturePayload)")
-//        print("  Signature: \(signature)")
-//        print("  Passphrase: \(requestPassphrase)")
-//        print("  API Key: \(apiKey)")
-//        print("  API Version: \(apiVersion)")
-        
         return request
     }
 }
 
-public struct BinanceAPIRequestBuilder: APIRequestBuilder {
+struct BinanceAPIRequestBuilder: APIRequestBuilder {
     public let exchangeType: ExchangeType
     public let creds: Credentials
     
@@ -141,37 +148,4 @@ public struct BinanceAPIRequestBuilder: APIRequestBuilder {
         request.setValue(creds.apiKey, forHTTPHeaderField: "X-MBX-APIKEY")
         return request
     }
-}
-
-@MainActor
-public struct APIRequestBuilderFactory {
-    public static func builder(for exchangeType: ExchangeType, creds: CredentialManagerProtocol) async -> APIRequestBuilder? {
-        let accountName = exchangeType.displayName
-
-        guard let credentials = try? await creds.getCredentials(forAccount: accountName) else { return nil }
-
-        switch exchangeType {
-        case .bybit:
-            return BybitAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
-        case .kucoin:
-            return KuCoinAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
-        case .binance:
-            return BinanceAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
-        }
-    }
-}
-
-// Helper function to convert hex string to Data
-public func hexStringToData(_ hexString: String) -> Data {
-    let len = hexString.count / 2
-    var data = Data(capacity: len)
-    for i in 0..<len {
-        let j = hexString.index(hexString.startIndex, offsetBy: i * 2)
-        let k = hexString.index(j, offsetBy: 2)
-        let bytes = hexString[j..<k]
-        if var num = UInt8(bytes, radix: 16) {
-            data.append(&num, count: 1)
-        }
-    }
-    return data
 }
