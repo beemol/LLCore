@@ -1,6 +1,6 @@
 //
 //  ErrorDetector.swift
-//  bbticker
+//  LLCore
 //
 //  Created by Aleh Fiodarau on 20/11/2025.
 //
@@ -10,6 +10,20 @@ import LLApiService
 
 /// Detects application-level errors in response body even when HTTP status is 200
 /// Different exchanges have different error response formats
+public struct AplicationErrorDetectorFactory {
+    public static func build(for exchangeType: ExchangeType) -> LLDomainErrorDetector? {
+
+        switch exchangeType {
+        case .bybit:
+            return BybitErrorDetector()
+        case .kucoin:
+            return KucoinErrorDetector()
+        case .binance:
+            return BinanceErrorDetector()
+        }
+    }
+}
+
 public struct BybitErrorDetector: LLDomainErrorDetector {
     public init() {}
     
@@ -134,20 +148,6 @@ public struct BinanceErrorDetector: LLDomainErrorDetector {
             default:
                 throw APIDomainError.unknown(context: context)
             }
-        }
-    }
-}
-
-public struct AplicationErrorDetectorFactory {
-    public static func build(for exchangeType: ExchangeType) -> LLDomainErrorDetector? {
-
-        switch exchangeType {
-        case .bybit:
-            return BybitErrorDetector()
-        case .kucoin:
-            return KucoinErrorDetector()
-        case .binance:
-            return BinanceErrorDetector()
         }
     }
 }
