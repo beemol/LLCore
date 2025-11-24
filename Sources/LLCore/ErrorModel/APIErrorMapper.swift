@@ -1,6 +1,6 @@
 //
 //  APIErrorMapper.swift
-//  LLCore
+//  bbticker
 //
 //  Maps HTTP responses and exchange-specific error payloads to APIDomainError.
 //
