@@ -1,6 +1,27 @@
+//
+//  LLCoreTests.swift
+//  LLCoreTests
+//
+//  Main test file - comprehensive tests are organized in separate files:
+//  - ErrorDetectorTests.swift
+//  - RequestBuilderTests.swift
+//  - ParserTests.swift
+//  - ErrorMapperTests.swift
+//  - HelpersTests.swift
+//  - ModelTests.swift
+//
+
 import Testing
 @testable import LLCore
 
-@Test func example() async throws {
-    // Write your test here and use APIs like `#expect(...)` to check expected conditions.
+@Suite("LLCore Package Tests")
+struct LLCoreTests {
+    
+    @Test("Package imports successfully")
+    func testPackageImports() {
+        // Verify that the package can be imported and basic types are accessible
+        let _ = ExchangeType.bybit(walletType: .unified)
+        let _ = WalletData(totalEquity: "0", walletBalance: "0")
+        let _ = APIError.invalidRequest
+    }
 }
