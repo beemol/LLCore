@@ -41,7 +41,7 @@ public enum APIDomainError: Error, Equatable {
 }
 
 /// Additional metadata for diagnostics and analytics (no secrets).
-public struct APIErrorContext: Equatable {
+public struct APIErrorContext: Equatable, Sendable {
     public let exchange: ExchangeType
     public let httpStatus: Int?
     public let apiCode: String?

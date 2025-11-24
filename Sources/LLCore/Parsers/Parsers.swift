@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import CommonCrypto
 
 import LLApiService
 
@@ -24,35 +23,34 @@ public extension WalletDataParserProtocol {
     }
 }
 
-// MARK: - Enhanced Parser Protocol for Detailed Information
-public protocol EnhancedWalletDataParserProtocol: WalletDataParserProtocol {
-    func parseDetailedWalletBalance(from data: Data) -> BBWalletDataEnhanced?
+public struct WalletDataParserFactory {
+    public static func parser(for exchange: ExchangeType) -> any WalletDataParserProtocol {
+        switch exchange {
+        case .bybit(let walletType):
+            switch walletType {
+            case .spot:
+                return BybitSpotWalletDataParser()
+            case .unified:
+                return BybitUnifiedWalletDataParser()
+            case .futures:
+                return BybitUnifiedWalletDataParser()
+            }
+        case .kucoin(let walletType):
+            return KuCoinWalletDataParser(walletType: walletType)
+        case .binance:
+            return BinanceWalletDataParser()
+        }
+    }
 }
+
+//// MARK: - Enhanced Parser Protocol for Detailed Information
+//public protocol EnhancedWalletDataParserProtocol: WalletDataParserProtocol {
+//    func parseDetailedWalletBalance(from data: Data) -> BBWalletDataEnhanced?
+//}
+
+// MARK: concrete implementations
 
 // MARK: - Bybit Parsers
-
-// Shared helpers to avoid duplication between spot and unified parsers
-private func bybitParseUSDTFromCoins(_ result: [String: Any]) -> BBWalletData? {
-    if let list = result["list"] as? [[String: Any]],
-       let first = list.first,
-       let coins = first["coin"] as? [[String: Any]],
-       let usdtCoin = coins.first(where: { $0["coin"] as? String == "USDT" }) {
-        let walletBalanceValue = (usdtCoin["walletBalance"] as? String)
-            ?? (usdtCoin["availableToWithdraw"] as? String)
-            ?? "0"
-        let totalEquityValue = (usdtCoin["equity"] as? String) ?? walletBalanceValue
-        return BBWalletData(totalEquity: totalEquityValue, walletBalance: walletBalanceValue)
-    }
-    return nil
-}
-
-private func bybitParseTotals(_ result: [String: Any]) -> BBWalletData? {
-    if let totalEquity = result["totalEquity"] as? String,
-       let totalWalletBalance = result["totalWalletBalance"] as? String {
-        return BBWalletData(totalEquity: totalEquity, walletBalance: totalWalletBalance)
-    }
-    return nil
-}
 
 public struct BybitSpotWalletDataParser: WalletDataParserProtocol {
     public init() {}
@@ -90,8 +88,31 @@ public struct BybitUnifiedWalletDataParser: WalletDataParserProtocol {
     }
 }
 
+// Shared helpers to avoid duplication between spot and unified parsers
+private func bybitParseUSDTFromCoins(_ result: [String: Any]) -> BBWalletData? {
+    if let list = result["list"] as? [[String: Any]],
+       let first = list.first,
+       let coins = first["coin"] as? [[String: Any]],
+       let usdtCoin = coins.first(where: { $0["coin"] as? String == "USDT" }) {
+        let walletBalanceValue = (usdtCoin["walletBalance"] as? String)
+            ?? (usdtCoin["availableToWithdraw"] as? String)
+            ?? "0"
+        let totalEquityValue = (usdtCoin["equity"] as? String) ?? walletBalanceValue
+        return BBWalletData(totalEquity: totalEquityValue, walletBalance: walletBalanceValue)
+    }
+    return nil
+}
+
+private func bybitParseTotals(_ result: [String: Any]) -> BBWalletData? {
+    if let totalEquity = result["totalEquity"] as? String,
+       let totalWalletBalance = result["totalWalletBalance"] as? String {
+        return BBWalletData(totalEquity: totalEquity, walletBalance: totalWalletBalance)
+    }
+    return nil
+}
+
 // MARK: - KuCoin Parser
-public struct KuCoinWalletDataParser: WalletDataParserProtocol, EnhancedWalletDataParserProtocol {
+public struct KuCoinWalletDataParser: WalletDataParserProtocol {
     public let walletType: WalletType
     
     public init(walletType: WalletType = .spot) {
@@ -172,63 +193,63 @@ public struct KuCoinWalletDataParser: WalletDataParserProtocol, EnhancedWalletDa
         return parseSpotWalletBalance(from: json)
     }
     
-    public func parseDetailedWalletBalance(from data: Data) -> BBWalletDataEnhanced? {
-        do {
-            guard let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
-                  let dataArray = json["data"] as? [[String: Any]] else {
-                print("KuCoin JSON Parse Error: Invalid data structure")
-                return nil
-            }
-            
-            // Parse all accounts
-            let accounts = parseKuCoinAccounts(from: dataArray)
-            
-            // Aggregate balances by currency
-            let aggregatedBalances = aggregateBalances(accounts: accounts)
-            
-            // Calculate total portfolio value
-            let totalPortfolioValue = calculateTotalPortfolioValue(aggregatedBalances: aggregatedBalances)
-            
-            // Create breakdown by account type
-            var breakdown: [String: String] = [:]
-            var allAssets: [String: String] = [:]
-            
-            // Group by account type
-            var accountTypeMap: [String: [KuCoinAccount]] = [:]
-            for account in accounts {
-                if accountTypeMap[account.type] == nil {
-                    accountTypeMap[account.type] = []
-                }
-                accountTypeMap[account.type]?.append(account)
-            }
-            
-            // Calculate totals by account type
-            for (accountType, typeAccounts) in accountTypeMap {
-                let totalBalance = typeAccounts.compactMap { Double($0.balance) }.reduce(0, +)
-                breakdown[accountType] = String(format: "%.2f", totalBalance)
-            }
-            
-            // Create asset summary
-            for balance in aggregatedBalances {
-                allAssets[balance.currency] = String(format: "%.2f", balance.totalBalance)
-            }
-            
-            // Find USDT balance for wallet balance
-            let usdtBalance = aggregatedBalances.first { $0.currency == "USDT" }
-            let walletBalance = usdtBalance?.totalAvailable.description ?? "0.00"
-            
-            return BBWalletDataEnhanced(
-                totalEquity: String(format: "%.2f", totalPortfolioValue),
-                walletBalance: walletBalance,
-                breakdown: breakdown,
-                allAssets: allAssets
-            )
-            
-        } catch {
-            print("KuCoin JSON Parse Error: \(error.localizedDescription)")
-            return nil
-        }
-    }
+//    public func parseDetailedWalletBalance(from data: Data) -> BBWalletDataEnhanced? {
+//        do {
+//            guard let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
+//                  let dataArray = json["data"] as? [[String: Any]] else {
+//                print("KuCoin JSON Parse Error: Invalid data structure")
+//                return nil
+//            }
+//            
+//            // Parse all accounts
+//            let accounts = parseKuCoinAccounts(from: dataArray)
+//            
+//            // Aggregate balances by currency
+//            let aggregatedBalances = aggregateBalances(accounts: accounts)
+//            
+//            // Calculate total portfolio value
+//            let totalPortfolioValue = calculateTotalPortfolioValue(aggregatedBalances: aggregatedBalances)
+//            
+//            // Create breakdown by account type
+//            var breakdown: [String: String] = [:]
+//            var allAssets: [String: String] = [:]
+//            
+//            // Group by account type
+//            var accountTypeMap: [String: [KuCoinAccount]] = [:]
+//            for account in accounts {
+//                if accountTypeMap[account.type] == nil {
+//                    accountTypeMap[account.type] = []
+//                }
+//                accountTypeMap[account.type]?.append(account)
+//            }
+//            
+//            // Calculate totals by account type
+//            for (accountType, typeAccounts) in accountTypeMap {
+//                let totalBalance = typeAccounts.compactMap { Double($0.balance) }.reduce(0, +)
+//                breakdown[accountType] = String(format: "%.2f", totalBalance)
+//            }
+//            
+//            // Create asset summary
+//            for balance in aggregatedBalances {
+//                allAssets[balance.currency] = String(format: "%.2f", balance.totalBalance)
+//            }
+//            
+//            // Find USDT balance for wallet balance
+//            let usdtBalance = aggregatedBalances.first { $0.currency == "USDT" }
+//            let walletBalance = usdtBalance?.totalAvailable.description ?? "0.00"
+//            
+//            return BBWalletDataEnhanced(
+//                totalEquity: String(format: "%.2f", totalPortfolioValue),
+//                walletBalance: walletBalance,
+//                breakdown: breakdown,
+//                allAssets: allAssets
+//            )
+//            
+//        } catch {
+//            print("KuCoin JSON Parse Error: \(error.localizedDescription)")
+//            return nil
+//        }
+//    }
     
     // MARK: - Helper Methods
     
@@ -362,43 +383,5 @@ public struct BinanceWalletDataParser: WalletDataParserProtocol {
         if let dbl = value as? Double { return String(format: "%.8f", dbl) }
         if let intVal = value as? Int { return String(intVal) }
         return nil
-    }
-}
-
-public struct WalletDataParserFactory {
-    public static func parser(for exchange: ExchangeType) -> any WalletDataParserProtocol {
-        switch exchange {
-        case .bybit(let walletType):
-            switch walletType {
-            case .spot:
-                return BybitSpotWalletDataParser()
-            case .unified:
-                return BybitUnifiedWalletDataParser()
-            case .futures:
-                return BybitUnifiedWalletDataParser()
-            }
-        case .kucoin(let walletType):
-            return KuCoinWalletDataParser(walletType: walletType)
-        case .binance:
-            return BinanceWalletDataParser()
-        }
-    }
-}
-
-public extension String {
-    func hmacSHA256(key: String) -> String {
-        guard let keyData = key.data(using: .utf8),
-              let messageData = self.data(using: .utf8) else {
-            return ""
-        }
-
-        let keyBytes = keyData.withUnsafeBytes { $0.baseAddress!.assumingMemoryBound(to: UInt8.self) }
-        let messageBytes = messageData.withUnsafeBytes { $0.baseAddress!.assumingMemoryBound(to: UInt8.self) }
-
-        var hmac = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
-        CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), keyBytes, keyData.count, messageBytes, messageData.count, &hmac)
-
-        let hmacData = Data(hmac)
-        return hmacData.map { String(format: "%02hhx", $0) }.joined()
     }
 }

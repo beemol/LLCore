@@ -11,6 +11,7 @@ import Combine
 import Network
 import SwiftUI
 
+// MARK: Public data models
 public struct BBWalletData {
     public let totalEquity: String
     public let walletBalance: String
@@ -22,7 +23,7 @@ public struct BBWalletData {
 }
 
 // MARK: - KuCoin Specific Data Models
-public struct KuCoinAccount {
+struct KuCoinAccount {
     public let id: String
     public let currency: String
     public let type: String // "main", "trade", "margin", "futures", etc.
@@ -40,7 +41,7 @@ public struct KuCoinAccount {
     }
 }
 
-public struct KuCoinAggregatedBalance {
+struct KuCoinAggregatedBalance {
     public let currency: String
     public let totalBalance: Double
     public let totalAvailable: Double
@@ -55,19 +56,19 @@ public struct KuCoinAggregatedBalance {
 }
 
 // MARK: - Enhanced Wallet Data for Multi-Account Support
-public struct BBWalletDataEnhanced {
-    public let totalEquity: String
-    public let walletBalance: String
-    public let breakdown: [String: String] // Account type -> balance
-    public let allAssets: [String: String] // Currency -> total balance
-    
-    public init(totalEquity: String, walletBalance: String, breakdown: [String: String], allAssets: [String: String]) {
-        self.totalEquity = totalEquity
-        self.walletBalance = walletBalance
-        self.breakdown = breakdown
-        self.allAssets = allAssets
-    }
-}
+//public struct BBWalletDataEnhanced {
+//    public let totalEquity: String
+//    public let walletBalance: String
+//    public let breakdown: [String: String] // Account type -> balance
+//    public let allAssets: [String: String] // Currency -> total balance
+//    
+//    public init(totalEquity: String, walletBalance: String, breakdown: [String: String], allAssets: [String: String]) {
+//        self.totalEquity = totalEquity
+//        self.walletBalance = walletBalance
+//        self.breakdown = breakdown
+//        self.allAssets = allAssets
+//    }
+//}
 
 public struct Credentials: Equatable, Sendable {
     public let apiKey: String

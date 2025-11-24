@@ -23,11 +23,11 @@ public extension ExchangeType {
     }
 }
 
-public enum WalletType: String, CaseIterable, Hashable {
+public enum WalletType: String, CaseIterable, Hashable, Sendable {
     case spot, futures, unified
 }
 
-public enum ExchangeType: Hashable, CaseIterable {
+public enum ExchangeType: Hashable, CaseIterable, Sendable {
     public static var allCases: [ExchangeType] {
         return [
             .bybit(walletType: .spot),
