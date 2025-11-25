@@ -28,7 +28,8 @@ let package = Package(
         ),
         .testTarget(
             name: "LLCoreTests",
-            dependencies: ["LLCore"]
+            dependencies: ["LLCore",
+                           .product(name: "LLApiService", package: "LLApiService")]
         ),
     ]
 )
