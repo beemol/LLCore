@@ -18,6 +18,11 @@ final public class PollingStrategy<Output> {
     private let fetchHandler: FetchHandler
     private let updateHandler: UpdateHandler
     private let errorHandler: ErrorHandler
+
+    // reconnection controls
+    private var reconnectionAttempts = 0
+    private var maxReconnectionAttempts = 5
+    private var reconnectionDelay: Double = 1.0
     
     // query closure to check if connection is in proper state (i.e. .connected)
     private let shouldContinue: () -> Bool
@@ -55,8 +60,23 @@ final public class PollingStrategy<Output> {
                 do {
                     let data = try await fetchHandler()
                     updateHandler(data)
+
+                    // reset reconnection state
+                    reconnectionAttempts = 0
+                    reconnectionDelay = 1.0
                 } catch {
                     errorHandler(error)
+                    
+                    guard reconnectionAttempts < maxReconnectionAttempts else {
+                        // Max attempts reached, stop polling
+                        break
+                    }
+                    reconnectionAttempts += 1
+                    reconnectionDelay *= 2
+                    
+                    // Wait with exponential backoff before next attempt
+                    let backoffNanos = UInt64(reconnectionDelay * 1_000_000_000.0)
+                    try? await Task.sleep(nanoseconds: backoffNanos)
                 }
             }
         }
