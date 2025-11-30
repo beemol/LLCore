@@ -238,6 +238,21 @@ struct ModelTests {
             
             #expect(data.totalEquity == "1000.00")
             #expect(data.walletBalance == "900.00")
+            #expect(data.maintenanceMargin == WalletData.valueNotAvailable) // Default value
+        }
+        
+        @Test("Initializes with maintenance margin")
+        func testInitializationWithMaintenanceMargin() {
+            let data = WalletData(totalEquity: "1000.00", walletBalance: "900.00", maintenanceMargin: "50.00")
+            
+            #expect(data.totalEquity == "1000.00")
+            #expect(data.walletBalance == "900.00")
+            #expect(data.maintenanceMargin == "50.00")
+        }
+        
+        @Test("Value not available constant")
+        func testValueNotAvailableConstant() {
+            #expect(WalletData.valueNotAvailable == "n/a")
         }
         
         @Test("Handles zero values")
@@ -246,6 +261,7 @@ struct ModelTests {
             
             #expect(data.totalEquity == "0.00")
             #expect(data.walletBalance == "0.00")
+            #expect(data.maintenanceMargin == WalletData.valueNotAvailable)
         }
         
         @Test("Handles large values")

@@ -98,7 +98,8 @@ private func bybitParseUSDTFromCoins(_ result: [String: Any]) -> WalletData? {
             ?? (usdtCoin["availableToWithdraw"] as? String)
             ?? "0"
         let totalEquityValue = (usdtCoin["equity"] as? String) ?? walletBalanceValue
-        return WalletData(totalEquity: totalEquityValue, walletBalance: walletBalanceValue)
+        let maintenanceMarginValue = (first["totalMaintenanceMargin"] as? String) ?? WalletData.valueNotAvailable
+        return WalletData(totalEquity: totalEquityValue, walletBalance: walletBalanceValue, maintenanceMargin: maintenanceMarginValue)
     }
     return nil
 }
@@ -106,7 +107,8 @@ private func bybitParseUSDTFromCoins(_ result: [String: Any]) -> WalletData? {
 private func bybitParseTotals(_ result: [String: Any]) -> WalletData? {
     if let totalEquity = result["totalEquity"] as? String,
        let totalWalletBalance = result["totalWalletBalance"] as? String {
-        return WalletData(totalEquity: totalEquity, walletBalance: totalWalletBalance)
+        let maintenanceMargin = result["totalMaintenanceMargin"] as? String ?? WalletData.valueNotAvailable
+        return WalletData(totalEquity: totalEquity, walletBalance: totalWalletBalance, maintenanceMargin: maintenanceMargin)
     }
     return nil
 }
@@ -165,7 +167,8 @@ public struct KuCoinWalletDataParser: WalletDataParserProtocol {
         let walletBalance = usdtBalance?.totalAvailable.description ?? "0.00"
         let totalEquity = totalPortfolioValue.description
         
-        return WalletData(totalEquity: totalEquity, walletBalance: walletBalance)
+        // Spot accounts don't have maintenance margin
+        return WalletData(totalEquity: totalEquity, walletBalance: walletBalance, maintenanceMargin: WalletData.valueNotAvailable)
     }
     
     // MARK: - Futures Wallet Parsing
@@ -181,11 +184,20 @@ public struct KuCoinWalletDataParser: WalletDataParserProtocol {
             let totalEquity = String(format: "%.8f", accountEquity)
             let walletBalance = String(format: "%.8f", availableBalance)
             
+            // Extract maintenance margin if available
+            let maintenanceMargin: String
+            if let marginBalance = data["marginBalance"] as? Double {
+                maintenanceMargin = String(format: "%.8f", marginBalance)
+            } else {
+                maintenanceMargin = WalletData.valueNotAvailable
+            }
+            
             print("KuCoin  Currency: \(currency)")
             print("KuCoin  Account Equity: \(totalEquity)")
             print("KuCoin  Available Balance: \(walletBalance)")
+            print("KuCoin  Maintenance Margin: \(maintenanceMargin)")
             
-            return WalletData(totalEquity: totalEquity, walletBalance: walletBalance)
+            return WalletData(totalEquity: totalEquity, walletBalance: walletBalance, maintenanceMargin: maintenanceMargin)
         }
         
         // Fallback: try to parse as spot format if futures uses similar structure
@@ -351,9 +363,11 @@ public struct BinanceWalletDataParser: WalletDataParserProtocol {
             // Prefer USDT-M Futures account response fields (GET /fapi/v2/account)
             // totalMarginBalance = equity (wallet balance + unrealized PnL)
             // totalWalletBalance = wallet balance (excludes unrealized PnL)
+            // totalMaintMargin = maintenance margin
             if let totalMarginBalance = valueAsString(json["totalMarginBalance"]),
                let totalWalletBalance = valueAsString(json["totalWalletBalance"]) {
-                return WalletData(totalEquity: totalMarginBalance, walletBalance: totalWalletBalance)
+                let maintenanceMargin = valueAsString(json["totalMaintMargin"]) ?? WalletData.valueNotAvailable
+                return WalletData(totalEquity: totalMarginBalance, walletBalance: totalWalletBalance, maintenanceMargin: maintenanceMargin)
             }
 
             // Fallback: spot account structure (GET /api/v3/account)
