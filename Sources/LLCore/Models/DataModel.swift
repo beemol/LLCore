@@ -13,12 +13,17 @@ import SwiftUI
 
 // MARK: Public data models
 public struct WalletData {
+    /// Constant representing unavailable or not applicable value for any wallet data field
+    public static let valueNotAvailable = "n/a"
+    
     public let totalEquity: String
     public let walletBalance: String
+    public let maintenanceMargin: String
     
-    public init(totalEquity: String, walletBalance: String) {
+    public init(totalEquity: String, walletBalance: String, maintenanceMargin: String = WalletData.valueNotAvailable) {
         self.totalEquity = totalEquity
         self.walletBalance = walletBalance
+        self.maintenanceMargin = maintenanceMargin
     }
 }
 

@@ -19,7 +19,8 @@ public enum TestFixtures {
             "retMsg": "OK",
             "result": {
                 "totalEquity": "1000.00",
-                "totalWalletBalance": "900.00"
+                "totalWalletBalance": "900.00",
+                "totalMaintenanceMargin": "50.00"
             },
             "retExtInfo": {},
             "time": 1759564016973
@@ -116,6 +117,7 @@ public enum TestFixtures {
             "data": {
                 "accountEquity": 1000.50,
                 "availableBalance": 950.25,
+                "marginBalance": 75.50,
                 "currency": "USDT"
             }
         }
@@ -181,6 +183,7 @@ public enum TestFixtures {
         {
             "totalMarginBalance": "1234.56789",
             "totalWalletBalance": "1200.00000",
+            "totalMaintMargin": "100.00000",
             "availableBalance": "1100.00000"
         }
         """
