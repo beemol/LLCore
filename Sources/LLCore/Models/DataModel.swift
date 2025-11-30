@@ -18,12 +18,38 @@ public struct WalletData {
     
     public let totalEquity: String
     public let walletBalance: String
+    /// Absolute maintenance margin value (in currency units, e.g., USDT)
     public let maintenanceMargin: String
     
     public init(totalEquity: String, walletBalance: String, maintenanceMargin: String = WalletData.valueNotAvailable) {
         self.totalEquity = totalEquity
         self.walletBalance = walletBalance
         self.maintenanceMargin = maintenanceMargin
+    }
+    
+    /// Calculates the maintenance margin as a percentage of total equity
+    /// Returns nil if values are not available or cannot be parsed
+    /// Formula: (maintenanceMargin / totalEquity) × 100
+    public var maintenanceMarginPercentage: Double? {
+        guard maintenanceMargin != WalletData.valueNotAvailable,
+              totalEquity != WalletData.valueNotAvailable,
+              let mmValue = Double(maintenanceMargin),
+              let equityValue = Double(totalEquity),
+              equityValue > 0 else {
+            return nil
+        }
+        
+        return (mmValue / equityValue) * 100.0
+    }
+    
+    /// Returns the maintenance margin percentage formatted as a string with specified decimal places
+    /// - Parameter decimalPlaces: Number of decimal places (default: 2)
+    /// - Returns: Formatted percentage string (e.g., "5.00%") or "n/a" if unavailable
+    public func maintenanceMarginPercentageFormatted(decimalPlaces: Int = 2) -> String {
+        guard let percentage = maintenanceMarginPercentage else {
+            return WalletData.valueNotAvailable
+        }
+        return String(format: "%.\(decimalPlaces)f%%", percentage)
     }
 }
 
