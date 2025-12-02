@@ -12,32 +12,32 @@ import Network
 import SwiftUI
 
 // MARK: Public data models
+
+/// Wallet data model - only created when data is valid
+/// If parsing fails, parsers return nil instead of creating invalid WalletData
 public struct WalletData {
-    /// Constant representing unavailable or not applicable value for any wallet data field
-    public static let valueNotAvailable = "n/a"
-    
-    public let totalEquity: String
-    public let walletBalance: String
+    /// Total equity value (in currency units, e.g., USDT)
+    public let totalEquity: Double
+    /// Wallet balance (in currency units, e.g., USDT)
+    public let walletBalance: Double
     /// Absolute maintenance margin value (in currency units, e.g., USDT)
-    /// Always >= 0. Value of 0 means no maintenance margin or not applicable (e.g., spot accounts)
+    /// Value of 0 means no maintenance margin or not applicable (e.g., spot accounts)
     public let maintenanceMargin: Double
     
-    public init(totalEquity: String, walletBalance: String, maintenanceMargin: Double = 0) {
+    public init(totalEquity: Double, walletBalance: Double, maintenanceMargin: Double = 0) {
         self.totalEquity = totalEquity
         self.walletBalance = walletBalance
         self.maintenanceMargin = max(0, maintenanceMargin) // Ensure non-negative
     }
     
     /// Calculates the maintenance margin as a percentage of total equity
-    /// Returns 0 if total equity is not available, invalid, or zero
+    /// Returns 0 if total equity is zero (avoids division by zero)
     /// Formula: (maintenanceMargin / totalEquity) × 100
     public var maintenanceMarginPercentage: Double {
-        guard let equityValue = Double(totalEquity),
-              equityValue > 0 else {
+        guard totalEquity > 0 else {
             return 0
         }
-        
-        return (maintenanceMargin / equityValue) * 100.0
+        return (maintenanceMargin / totalEquity) * 100.0
     }
     
     /// Returns the maintenance margin percentage formatted as a string with specified decimal places

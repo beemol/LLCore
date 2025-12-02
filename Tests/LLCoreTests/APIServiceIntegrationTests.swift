@@ -424,8 +424,8 @@ struct APIServiceIntegrationTests {
         
         do {
             let data = try await apiService.fetchWalletBalance(for: .bybit(walletType: .unified))
-            #expect(data.totalEquity == "1000.00")
-            #expect(data.walletBalance == "900.00")
+            #expect(data.totalEquity == 1000.00)
+            #expect(data.walletBalance == 900.00)
         } catch {
             Issue.record("Expected successful parse, got error: \(error)")
         }
@@ -524,8 +524,8 @@ struct APIServiceIntegrationTests {
         
         do {
             let data = try await apiService.fetchWalletBalance(for: .bybit(walletType: .unified))
-            #expect(data.walletBalance == "123.45")
-            #expect(data.totalEquity == "123.45") // equity falls back to walletBalance for SPOT
+            #expect(data.walletBalance == 123.45)
+            #expect(data.totalEquity == 123.45) // equity falls back to walletBalance for SPOT
         } catch {
             Issue.record("Expected successful parse, got error: \(error)")
         }

@@ -21,7 +21,7 @@ struct LLCoreTests {
     func testPackageImports() {
         // Verify that the package can be imported and basic types are accessible
         let _ = ExchangeType.bybit(walletType: .unified)
-        let _ = WalletData(totalEquity: "0", walletBalance: "0")
+        let _ = WalletData(totalEquity: 0, walletBalance: 0)
         let _ = APIError.invalidRequest
     }
 }
