@@ -98,8 +98,8 @@ private func bybitParseUSDTFromCoins(_ result: [String: Any]) -> WalletData? {
             ?? (usdtCoin["availableToWithdraw"] as? String)
             ?? "0"
         let totalEquityValue = (usdtCoin["equity"] as? String) ?? walletBalanceValue
-        let maintenanceMarginValue = (first["totalMaintenanceMargin"] as? String) ?? WalletData.valueNotAvailable
-        return WalletData(totalEquity: totalEquityValue, walletBalance: walletBalanceValue, maintenanceMargin: maintenanceMarginValue)
+        let maintenanceMargin = parseMaintenanceMargin(first["totalMaintenanceMargin"])
+        return WalletData(totalEquity: totalEquityValue, walletBalance: walletBalanceValue, maintenanceMargin: maintenanceMargin)
     }
     return nil
 }
@@ -107,10 +107,24 @@ private func bybitParseUSDTFromCoins(_ result: [String: Any]) -> WalletData? {
 private func bybitParseTotals(_ result: [String: Any]) -> WalletData? {
     if let totalEquity = result["totalEquity"] as? String,
        let totalWalletBalance = result["totalWalletBalance"] as? String {
-        let maintenanceMargin = result["totalMaintenanceMargin"] as? String ?? WalletData.valueNotAvailable
+        let maintenanceMargin = parseMaintenanceMargin(result["totalMaintenanceMargin"])
         return WalletData(totalEquity: totalEquity, walletBalance: totalWalletBalance, maintenanceMargin: maintenanceMargin)
     }
     return nil
+}
+
+/// Helper to parse maintenance margin from various formats to Double
+private func parseMaintenanceMargin(_ value: Any?) -> Double {
+    if let doubleValue = value as? Double {
+        return doubleValue
+    }
+    if let stringValue = value as? String, let parsed = Double(stringValue) {
+        return parsed
+    }
+    if let intValue = value as? Int {
+        return Double(intValue)
+    }
+    return 0
 }
 
 // MARK: - KuCoin Parser
@@ -167,8 +181,8 @@ public struct KuCoinWalletDataParser: WalletDataParserProtocol {
         let walletBalance = usdtBalance?.totalAvailable.description ?? "0.00"
         let totalEquity = totalPortfolioValue.description
         
-        // Spot accounts don't have maintenance margin
-        return WalletData(totalEquity: totalEquity, walletBalance: walletBalance, maintenanceMargin: WalletData.valueNotAvailable)
+        // Spot accounts don't have maintenance margin (0)
+        return WalletData(totalEquity: totalEquity, walletBalance: walletBalance, maintenanceMargin: 0)
     }
     
     // MARK: - Futures Wallet Parsing
@@ -184,13 +198,8 @@ public struct KuCoinWalletDataParser: WalletDataParserProtocol {
             let totalEquity = String(format: "%.8f", accountEquity)
             let walletBalance = String(format: "%.8f", availableBalance)
             
-            // Extract maintenance margin if available
-            let maintenanceMargin: String
-            if let marginBalance = data["marginBalance"] as? Double {
-                maintenanceMargin = String(format: "%.8f", marginBalance)
-            } else {
-                maintenanceMargin = WalletData.valueNotAvailable
-            }
+            // Extract maintenance margin if available (defaults to 0)
+            let maintenanceMargin = (data["marginBalance"] as? Double) ?? 0
             
             print("KuCoin  Currency: \(currency)")
             print("KuCoin  Account Equity: \(totalEquity)")
@@ -366,7 +375,7 @@ public struct BinanceWalletDataParser: WalletDataParserProtocol {
             // totalMaintMargin = maintenance margin
             if let totalMarginBalance = valueAsString(json["totalMarginBalance"]),
                let totalWalletBalance = valueAsString(json["totalWalletBalance"]) {
-                let maintenanceMargin = valueAsString(json["totalMaintMargin"]) ?? WalletData.valueNotAvailable
+                let maintenanceMargin = valueAsDouble(json["totalMaintMargin"]) ?? 0
                 return WalletData(totalEquity: totalMarginBalance, walletBalance: totalWalletBalance, maintenanceMargin: maintenanceMargin)
             }
 
@@ -396,6 +405,14 @@ public struct BinanceWalletDataParser: WalletDataParserProtocol {
         if let num = value as? NSNumber { return String(format: "%.8f", num.doubleValue) }
         if let dbl = value as? Double { return String(format: "%.8f", dbl) }
         if let intVal = value as? Int { return String(intVal) }
+        return nil
+    }
+    
+    private func valueAsDouble(_ value: Any?) -> Double? {
+        if let dbl = value as? Double { return dbl }
+        if let str = value as? String { return Double(str) }
+        if let num = value as? NSNumber { return num.doubleValue }
+        if let intVal = value as? Int { return Double(intVal) }
         return nil
     }
 }

@@ -19,37 +19,32 @@ public struct WalletData {
     public let totalEquity: String
     public let walletBalance: String
     /// Absolute maintenance margin value (in currency units, e.g., USDT)
-    public let maintenanceMargin: String
+    /// Always >= 0. Value of 0 means no maintenance margin or not applicable (e.g., spot accounts)
+    public let maintenanceMargin: Double
     
-    public init(totalEquity: String, walletBalance: String, maintenanceMargin: String = WalletData.valueNotAvailable) {
+    public init(totalEquity: String, walletBalance: String, maintenanceMargin: Double = 0) {
         self.totalEquity = totalEquity
         self.walletBalance = walletBalance
-        self.maintenanceMargin = maintenanceMargin
+        self.maintenanceMargin = max(0, maintenanceMargin) // Ensure non-negative
     }
     
     /// Calculates the maintenance margin as a percentage of total equity
-    /// Returns nil if values are not available or cannot be parsed
+    /// Returns 0 if total equity is not available, invalid, or zero
     /// Formula: (maintenanceMargin / totalEquity) × 100
-    public var maintenanceMarginPercentage: Double? {
-        guard maintenanceMargin != WalletData.valueNotAvailable,
-              totalEquity != WalletData.valueNotAvailable,
-              let mmValue = Double(maintenanceMargin),
-              let equityValue = Double(totalEquity),
+    public var maintenanceMarginPercentage: Double {
+        guard let equityValue = Double(totalEquity),
               equityValue > 0 else {
-            return nil
+            return 0
         }
         
-        return (mmValue / equityValue) * 100.0
+        return (maintenanceMargin / equityValue) * 100.0
     }
     
     /// Returns the maintenance margin percentage formatted as a string with specified decimal places
     /// - Parameter decimalPlaces: Number of decimal places (default: 2)
-    /// - Returns: Formatted percentage string (e.g., "5.00%") or "n/a" if unavailable
+    /// - Returns: Formatted percentage string (e.g., "5.00%")
     public func maintenanceMarginPercentageFormatted(decimalPlaces: Int = 2) -> String {
-        guard let percentage = maintenanceMarginPercentage else {
-            return WalletData.valueNotAvailable
-        }
-        return String(format: "%.\(decimalPlaces)f%%", percentage)
+        return String(format: "%.\(decimalPlaces)f%%", maintenanceMarginPercentage)
     }
 }
 
