@@ -25,8 +25,8 @@ struct ParserTests {
             let result = parser.parseWalletBalance(from: data)
             
             #expect(result != nil)
-            #expect(result?.totalEquity == "1000.00")
-            #expect(result?.walletBalance == "900.00")
+            #expect(result?.totalEquity == 1000.00)
+            #expect(result?.walletBalance == 900.00)
             #expect(result?.maintenanceMargin == 50.00)
         }
         
@@ -38,7 +38,7 @@ struct ParserTests {
             let result = parser.parseWalletBalance(from: data)
             
             #expect(result != nil)
-            #expect(result?.walletBalance == "123.45")
+            #expect(result?.walletBalance == 123.45)
         }
         
         @Test("Returns nil for invalid JSON")
@@ -83,8 +83,8 @@ struct ParserTests {
             let result = parser.parseWalletBalance(from: data)
             
             #expect(result != nil)
-            #expect(result?.walletBalance == "123.45")
-            #expect(result?.totalEquity == "123.45") // Equity falls back to walletBalance for SPOT
+            #expect(result?.walletBalance == 123.45)
+            #expect(result?.totalEquity == 123.45) // Equity falls back to walletBalance for SPOT
             #expect(result?.maintenanceMargin == 0) // Spot doesn't have MM
         }
         
@@ -96,7 +96,7 @@ struct ParserTests {
             let result = parser.parseWalletBalance(from: data)
             
             #expect(result != nil)
-            #expect(result?.walletBalance == "123.45") // From coin list, not totals
+            #expect(result?.walletBalance == 123.45) // From coin list, not totals
         }
         
         @Test("Falls back to totals if no coin list")
@@ -107,8 +107,8 @@ struct ParserTests {
             let result = parser.parseWalletBalance(from: data)
             
             #expect(result != nil)
-            #expect(result?.totalEquity == "1000.00")
-            #expect(result?.walletBalance == "900.00")
+            #expect(result?.totalEquity == 1000.00)
+            #expect(result?.walletBalance == 900.00)
         }
     }
     
@@ -125,8 +125,8 @@ struct ParserTests {
             let result = parser.parseWalletBalance(from: data)
             
             #expect(result != nil)
-            #expect(result?.totalEquity == "1000.50000000")
-            #expect(result?.walletBalance == "950.25000000")
+            #expect(result?.totalEquity == 1000.50)
+            #expect(result?.walletBalance == 950.25)
             #expect(result?.maintenanceMargin == 75.50)
         }
         
@@ -163,7 +163,7 @@ struct ParserTests {
             let result = parser.parseWalletBalance(from: data)
             
             #expect(result != nil)
-            #expect(result?.walletBalance == "950.0") // USDT available balance
+            #expect(result?.walletBalance == 950.0) // USDT available balance
             #expect(result?.maintenanceMargin == 0) // Spot doesn't have MM
         }
         
@@ -231,8 +231,8 @@ struct ParserTests {
             let result = parser.parseWalletBalance(from: data)
             
             #expect(result != nil)
-            #expect(result?.totalEquity == "1234.56789")
-            #expect(result?.walletBalance == "1200.00000")
+            #expect(result?.totalEquity == 1234.56789)
+            #expect(result?.walletBalance == 1200.00)
             #expect(result?.maintenanceMargin == 100.00)
         }
         
@@ -245,7 +245,7 @@ struct ParserTests {
             
             #expect(result != nil)
             // totalMarginBalance includes unrealized PnL
-            #expect(result?.totalEquity == "1234.56789")
+            #expect(result?.totalEquity == 1234.56789)
         }
         
         @Test("Handles totalWalletBalance")
@@ -257,7 +257,7 @@ struct ParserTests {
             
             #expect(result != nil)
             // totalWalletBalance excludes unrealized PnL
-            #expect(result?.walletBalance == "1200.00000")
+            #expect(result?.walletBalance == 1200.00)
         }
         
         @Test("Returns nil for invalid structure")

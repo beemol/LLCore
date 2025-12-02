@@ -234,39 +234,34 @@ struct ModelTests {
         
         @Test("Initializes with values")
         func testInitialization() {
-            let data = WalletData(totalEquity: "1000.00", walletBalance: "900.00")
+            let data = WalletData(totalEquity: 1000.00, walletBalance: 900.00)
             
-            #expect(data.totalEquity == "1000.00")
-            #expect(data.walletBalance == "900.00")
+            #expect(data.totalEquity == 1000.00)
+            #expect(data.walletBalance == 900.00)
             #expect(data.maintenanceMargin == 0) // Default value
         }
         
         @Test("Initializes with maintenance margin")
         func testInitializationWithMaintenanceMargin() {
-            let data = WalletData(totalEquity: "1000.00", walletBalance: "900.00", maintenanceMargin: 50.00)
+            let data = WalletData(totalEquity: 1000.00, walletBalance: 900.00, maintenanceMargin: 50.00)
             
-            #expect(data.totalEquity == "1000.00")
-            #expect(data.walletBalance == "900.00")
+            #expect(data.totalEquity == 1000.00)
+            #expect(data.walletBalance == 900.00)
             #expect(data.maintenanceMargin == 50.00)
-        }
-        
-        @Test("Value not available constant")
-        func testValueNotAvailableConstant() {
-            #expect(WalletData.valueNotAvailable == "n/a")
         }
         
         @Test("Handles zero values")
         func testHandlesZeroValues() {
-            let data = WalletData(totalEquity: "0.00", walletBalance: "0.00")
+            let data = WalletData(totalEquity: 0.00, walletBalance: 0.00)
             
-            #expect(data.totalEquity == "0.00")
-            #expect(data.walletBalance == "0.00")
+            #expect(data.totalEquity == 0.00)
+            #expect(data.walletBalance == 0.00)
             #expect(data.maintenanceMargin == 0)
         }
         
         @Test("Ensures maintenance margin is non-negative")
         func testMaintenanceMarginNonNegative() {
-            let data = WalletData(totalEquity: "1000.00", walletBalance: "900.00", maintenanceMargin: -50.00)
+            let data = WalletData(totalEquity: 1000.00, walletBalance: 900.00, maintenanceMargin: -50.00)
             
             #expect(data.maintenanceMargin == 0) // Clamped to 0
         }
@@ -274,25 +269,17 @@ struct ModelTests {
         @Test("Handles large values")
         func testHandlesLargeValues() {
             let data = WalletData(
-                totalEquity: "123456789.12345678",
-                walletBalance: "987654321.87654321"
+                totalEquity: 123456789.12345678,
+                walletBalance: 987654321.87654321
             )
             
-            #expect(data.totalEquity == "123456789.12345678")
-            #expect(data.walletBalance == "987654321.87654321")
-        }
-        
-        @Test("Handles empty strings")
-        func testHandlesEmptyStrings() {
-            let data = WalletData(totalEquity: "", walletBalance: "")
-            
-            #expect(data.totalEquity == "")
-            #expect(data.walletBalance == "")
+            #expect(abs(data.totalEquity - 123456789.12345678) < 0.0001)
+            #expect(abs(data.walletBalance - 987654321.87654321) < 0.0001)
         }
         
         @Test("Calculates maintenance margin percentage correctly")
         func testMaintenanceMarginPercentageCalculation() {
-            let data = WalletData(totalEquity: "1000.00", walletBalance: "900.00", maintenanceMargin: 50.00)
+            let data = WalletData(totalEquity: 1000.00, walletBalance: 900.00, maintenanceMargin: 50.00)
             
             let percentage = data.maintenanceMarginPercentage
             #expect(abs(percentage - 5.0) < 0.001) // 50/1000 * 100 = 5%
@@ -300,21 +287,15 @@ struct ModelTests {
         
         @Test("Calculates high maintenance margin percentage")
         func testHighMaintenanceMarginPercentage() {
-            let data = WalletData(totalEquity: "10.00", walletBalance: "5.00", maintenanceMargin: 3.8)
+            let data = WalletData(totalEquity: 10.00, walletBalance: 5.00, maintenanceMargin: 3.8)
             
             let percentage = data.maintenanceMarginPercentage
             #expect(abs(percentage - 38.0) < 0.001) // 3.8/10 * 100 = 38%
         }
         
-        @Test("Returns zero for unavailable equity")
-        func testMaintenanceMarginPercentageUnavailableEquity() {
-            let data = WalletData(totalEquity: WalletData.valueNotAvailable, walletBalance: "900.00", maintenanceMargin: 50.00)
-            #expect(data.maintenanceMarginPercentage == 0)
-        }
-        
         @Test("Returns zero percentage for zero maintenance margin")
         func testMaintenanceMarginPercentageZeroMM() {
-            let data = WalletData(totalEquity: "1000.00", walletBalance: "900.00") // MM defaults to 0
+            let data = WalletData(totalEquity: 1000.00, walletBalance: 900.00) // MM defaults to 0
             
             let percentage = data.maintenanceMarginPercentage
             #expect(percentage == 0) // 0/1000 * 100 = 0%
@@ -322,14 +303,14 @@ struct ModelTests {
         
         @Test("Returns zero for zero equity")
         func testMaintenanceMarginPercentageZeroEquity() {
-            let data = WalletData(totalEquity: "0.00", walletBalance: "0.00", maintenanceMargin: 50.00)
+            let data = WalletData(totalEquity: 0.00, walletBalance: 0.00, maintenanceMargin: 50.00)
             
             #expect(data.maintenanceMarginPercentage == 0) // Avoid division by zero, return 0
         }
         
         @Test("Formats maintenance margin percentage correctly")
         func testMaintenanceMarginPercentageFormatted() {
-            let data = WalletData(totalEquity: "1000.00", walletBalance: "900.00", maintenanceMargin: 50.00)
+            let data = WalletData(totalEquity: 1000.00, walletBalance: 900.00, maintenanceMargin: 50.00)
             
             #expect(data.maintenanceMarginPercentageFormatted() == "5.00%")
             #expect(data.maintenanceMarginPercentageFormatted(decimalPlaces: 1) == "5.0%")
@@ -338,21 +319,14 @@ struct ModelTests {
         
         @Test("Formats zero percentage correctly")
         func testMaintenanceMarginPercentageFormattedZero() {
-            let data = WalletData(totalEquity: "1000.00", walletBalance: "900.00") // MM defaults to 0
-            
-            #expect(data.maintenanceMarginPercentageFormatted() == "0.00%")
-        }
-        
-        @Test("Formats unavailable equity as zero percent")
-        func testMaintenanceMarginPercentageFormattedUnavailable() {
-            let data = WalletData(totalEquity: WalletData.valueNotAvailable, walletBalance: "900.00", maintenanceMargin: 50.00)
+            let data = WalletData(totalEquity: 1000.00, walletBalance: 900.00) // MM defaults to 0
             
             #expect(data.maintenanceMarginPercentageFormatted() == "0.00%")
         }
         
         @Test("Calculates percentage with decimal values")
         func testMaintenanceMarginPercentageWithDecimals() {
-            let data = WalletData(totalEquity: "9.47368421", walletBalance: "5.00", maintenanceMargin: 3.6)
+            let data = WalletData(totalEquity: 9.47368421, walletBalance: 5.00, maintenanceMargin: 3.6)
             
             let percentage = data.maintenanceMarginPercentage
             #expect(abs(percentage - 38.0) < 0.1) // Approximately 38%

@@ -94,27 +94,33 @@ private func bybitParseUSDTFromCoins(_ result: [String: Any]) -> WalletData? {
        let first = list.first,
        let coins = first["coin"] as? [[String: Any]],
        let usdtCoin = coins.first(where: { $0["coin"] as? String == "USDT" }) {
-        let walletBalanceValue = (usdtCoin["walletBalance"] as? String)
-            ?? (usdtCoin["availableToWithdraw"] as? String)
-            ?? "0"
-        let totalEquityValue = (usdtCoin["equity"] as? String) ?? walletBalanceValue
-        let maintenanceMargin = parseMaintenanceMargin(first["totalMaintenanceMargin"])
-        return WalletData(totalEquity: totalEquityValue, walletBalance: walletBalanceValue, maintenanceMargin: maintenanceMargin)
+        
+        // Parse wallet balance
+        guard let walletBalance = parseDouble(usdtCoin["walletBalance"]) 
+                ?? parseDouble(usdtCoin["availableToWithdraw"]) else {
+            return nil
+        }
+        
+        // Parse equity (fallback to wallet balance)
+        let totalEquity = parseDouble(usdtCoin["equity"]) ?? walletBalance
+        let maintenanceMargin = parseDouble(first["totalMaintenanceMargin"]) ?? 0
+        
+        return WalletData(totalEquity: totalEquity, walletBalance: walletBalance, maintenanceMargin: maintenanceMargin)
     }
     return nil
 }
 
 private func bybitParseTotals(_ result: [String: Any]) -> WalletData? {
-    if let totalEquity = result["totalEquity"] as? String,
-       let totalWalletBalance = result["totalWalletBalance"] as? String {
-        let maintenanceMargin = parseMaintenanceMargin(result["totalMaintenanceMargin"])
-        return WalletData(totalEquity: totalEquity, walletBalance: totalWalletBalance, maintenanceMargin: maintenanceMargin)
+    guard let totalEquity = parseDouble(result["totalEquity"]),
+          let totalWalletBalance = parseDouble(result["totalWalletBalance"]) else {
+        return nil
     }
-    return nil
+    let maintenanceMargin = parseDouble(result["totalMaintenanceMargin"]) ?? 0
+    return WalletData(totalEquity: totalEquity, walletBalance: totalWalletBalance, maintenanceMargin: maintenanceMargin)
 }
 
-/// Helper to parse maintenance margin from various formats to Double
-private func parseMaintenanceMargin(_ value: Any?) -> Double {
+/// Helper to parse Double from various formats (String, Double, Int, NSNumber)
+private func parseDouble(_ value: Any?) -> Double? {
     if let doubleValue = value as? Double {
         return doubleValue
     }
@@ -124,7 +130,10 @@ private func parseMaintenanceMargin(_ value: Any?) -> Double {
     if let intValue = value as? Int {
         return Double(intValue)
     }
-    return 0
+    if let numValue = value as? NSNumber {
+        return numValue.doubleValue
+    }
+    return nil
 }
 
 // MARK: - KuCoin Parser
@@ -178,8 +187,8 @@ public struct KuCoinWalletDataParser: WalletDataParserProtocol {
         let totalPortfolioValue = calculateTotalPortfolioValue(aggregatedBalances: aggregatedBalances)
         
         // Use USDT available balance as wallet balance, total portfolio as equity
-        let walletBalance = usdtBalance?.totalAvailable.description ?? "0.00"
-        let totalEquity = totalPortfolioValue.description
+        let walletBalance = usdtBalance?.totalAvailable ?? 0
+        let totalEquity = totalPortfolioValue
         
         // Spot accounts don't have maintenance margin (0)
         return WalletData(totalEquity: totalEquity, walletBalance: walletBalance, maintenanceMargin: 0)
@@ -194,19 +203,15 @@ public struct KuCoinWalletDataParser: WalletDataParserProtocol {
            let availableBalance = data["availableBalance"] as? Double,
            let currency = data["currency"] as? String {
             
-            // Convert to strings for consistency
-            let totalEquity = String(format: "%.8f", accountEquity)
-            let walletBalance = String(format: "%.8f", availableBalance)
-            
             // Extract maintenance margin if available (defaults to 0)
             let maintenanceMargin = (data["marginBalance"] as? Double) ?? 0
             
             print("KuCoin  Currency: \(currency)")
-            print("KuCoin  Account Equity: \(totalEquity)")
-            print("KuCoin  Available Balance: \(walletBalance)")
+            print("KuCoin  Account Equity: \(accountEquity)")
+            print("KuCoin  Available Balance: \(availableBalance)")
             print("KuCoin  Maintenance Margin: \(maintenanceMargin)")
             
-            return WalletData(totalEquity: totalEquity, walletBalance: walletBalance, maintenanceMargin: maintenanceMargin)
+            return WalletData(totalEquity: accountEquity, walletBalance: availableBalance, maintenanceMargin: maintenanceMargin)
         }
         
         // Fallback: try to parse as spot format if futures uses similar structure
@@ -373,39 +378,18 @@ public struct BinanceWalletDataParser: WalletDataParserProtocol {
             // totalMarginBalance = equity (wallet balance + unrealized PnL)
             // totalWalletBalance = wallet balance (excludes unrealized PnL)
             // totalMaintMargin = maintenance margin
-            if let totalMarginBalance = valueAsString(json["totalMarginBalance"]),
-               let totalWalletBalance = valueAsString(json["totalWalletBalance"]) {
-                let maintenanceMargin = valueAsDouble(json["totalMaintMargin"]) ?? 0
-                return WalletData(totalEquity: totalMarginBalance, walletBalance: totalWalletBalance, maintenanceMargin: maintenanceMargin)
+            guard let totalMarginBalance = valueAsDouble(json["totalMarginBalance"]),
+                  let totalWalletBalance = valueAsDouble(json["totalWalletBalance"]) else {
+                return nil
             }
+            
+            let maintenanceMargin = valueAsDouble(json["totalMaintMargin"]) ?? 0
+            return WalletData(totalEquity: totalMarginBalance, walletBalance: totalWalletBalance, maintenanceMargin: maintenanceMargin)
 
-            // Fallback: spot account structure (GET /api/v3/account)
-//            if let balances = json["balances"] as? [[String: Any]] {
-//                if let usdt = balances.first(where: { $0["asset"] as? String == "USDT" }),
-//                   let freeStr = valueAsString(usdt["free"]),
-//                   let lockedStr = valueAsString(usdt["locked"]) {
-//                    if let freeVal = Double(freeStr), let lockedVal = Double(lockedStr) {
-//                        let totalEquity = String(format: "%.2f", freeVal + lockedVal)
-//                        return BBWalletData(totalEquity: totalEquity, walletBalance: freeStr, marginWalletBalance: freeStr)
-//                    } else {
-//                        return BBWalletData(totalEquity: freeStr, walletBalance: freeStr, marginWalletBalance: freeStr)
-//                    }
-//                }
-//            }
-
-            return nil
         } catch {
             print("Binance JSON Parse Error: \(error.localizedDescription)")
             return nil
         }
-    }
-
-    private func valueAsString(_ value: Any?) -> String? {
-        if let str = value as? String { return str }
-        if let num = value as? NSNumber { return String(format: "%.8f", num.doubleValue) }
-        if let dbl = value as? Double { return String(format: "%.8f", dbl) }
-        if let intVal = value as? Int { return String(intVal) }
-        return nil
     }
     
     private func valueAsDouble(_ value: Any?) -> Double? {
