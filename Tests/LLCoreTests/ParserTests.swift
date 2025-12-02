@@ -27,7 +27,7 @@ struct ParserTests {
             #expect(result != nil)
             #expect(result?.totalEquity == "1000.00")
             #expect(result?.walletBalance == "900.00")
-            #expect(result?.maintenanceMargin == "50.00")
+            #expect(result?.maintenanceMargin == 50.00)
         }
         
         @Test("Parses unified wallet with coin list fallback")
@@ -85,7 +85,7 @@ struct ParserTests {
             #expect(result != nil)
             #expect(result?.walletBalance == "123.45")
             #expect(result?.totalEquity == "123.45") // Equity falls back to walletBalance for SPOT
-            #expect(result?.maintenanceMargin == WalletData.valueNotAvailable) // Spot doesn't have MM
+            #expect(result?.maintenanceMargin == 0) // Spot doesn't have MM
         }
         
         @Test("Prefers coin-level parsing over totals")
@@ -127,7 +127,7 @@ struct ParserTests {
             #expect(result != nil)
             #expect(result?.totalEquity == "1000.50000000")
             #expect(result?.walletBalance == "950.25000000")
-            #expect(result?.maintenanceMargin == "75.50000000")
+            #expect(result?.maintenanceMargin == 75.50)
         }
         
         @Test("Handles currency field")
@@ -164,7 +164,7 @@ struct ParserTests {
             
             #expect(result != nil)
             #expect(result?.walletBalance == "950.0") // USDT available balance
-            #expect(result?.maintenanceMargin == WalletData.valueNotAvailable) // Spot doesn't have MM
+            #expect(result?.maintenanceMargin == 0) // Spot doesn't have MM
         }
         
         @Test("Aggregates balances by currency")
@@ -233,7 +233,7 @@ struct ParserTests {
             #expect(result != nil)
             #expect(result?.totalEquity == "1234.56789")
             #expect(result?.walletBalance == "1200.00000")
-            #expect(result?.maintenanceMargin == "100.00000")
+            #expect(result?.maintenanceMargin == 100.00)
         }
         
         @Test("Handles totalMarginBalance as equity")
