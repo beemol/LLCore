@@ -25,7 +25,7 @@ struct ModelTests {
             #expect(exchange.displayName == "bybit")
             #expect(exchange.baseURL == "https://api.bybit.com")
             #expect(exchange.endpoint == "/v5/account/wallet-balance?accountType=UNIFIED")
-            #expect(exchange.exchangeName == .bybit)
+            #expect(exchange.name == .bybit)
         }
         
         @Test("Bybit spot has correct properties")
@@ -46,7 +46,7 @@ struct ModelTests {
             #expect(exchange.displayName == "kucoin")
             #expect(exchange.baseURL == "https://api-futures.kucoin.com")
             #expect(exchange.endpoint == "/api/v1/account-overview?currency=USDT")
-            #expect(exchange.exchangeName == .kucoin)
+            #expect(exchange.name == .kucoin)
         }
         
         @Test("KuCoin spot has correct properties")
@@ -67,7 +67,7 @@ struct ModelTests {
             #expect(exchange.displayName == "binance")
             #expect(exchange.baseURL == "https://fapi.binance.com")
             #expect(exchange.endpoint == "/fapi/v2/account")
-            #expect(exchange.exchangeName == .binance)
+            #expect(exchange.name == .binance)
         }
         
         @Test("Available wallet types for Bybit")

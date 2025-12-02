@@ -9,12 +9,11 @@ public enum ExchangeName: String, CaseIterable, Hashable {
     case bybit
     case kucoin
     case binance
-    // Add new exchanges here
 }
 
 // keep this for mapping ExchangeType to ExchangeName and to make sure we have a single source of truth
 public extension ExchangeType {
-    var exchangeName: ExchangeName {
+    var name: ExchangeName {
         switch self {
         case .bybit: return .bybit
         case .kucoin: return .kucoin
@@ -54,81 +53,6 @@ public enum ExchangeType: Hashable, CaseIterable, Sendable {
             return [.futures]
         case .binance:
             return [.futures]
-        }
-    }
-    
-    public var displayName: String {
-        switch self {
-        case .bybit:
-            return "bybit"
-        case .kucoin:
-            return "kucoin"
-        case .binance:
-            return "binance"
-        }
-    }
-    
-    public var baseURL: String {
-        switch self {
-        case .bybit (let walletType):
-            switch walletType {
-            case .spot:
-                return "https://api.bybit.com"
-            case .futures:
-                return "xxx" 
-            case .unified:
-                return "https://api.bybit.com"
-            }
-        case .kucoin (let walletType):
-            switch walletType {
-            case .spot:
-                return "https://api.kucoin.com"
-            case .futures:
-                return "https://api-futures.kucoin.com"
-            case .unified:
-                return "xxx" // TODO: Placeholder, KuCoin doesn't have a unified wallet type
-            }
-        case .binance:
-            switch walletType {
-            case .spot:
-                return "xxx"
-            case .futures:
-                return "https://fapi.binance.com"
-            case .unified:
-                return "xxx" // TODO: Placeholder, binance doesn't have a unified wallet type
-            }
-        }
-    }
-    
-    public var endpoint: String {
-        switch self {
-        case .bybit:
-            switch walletType {
-            case .spot:
-                return "/v5/account/wallet-balance?accountType=SPOT"
-            case .futures:
-                return "xxx"
-            case .unified:
-                return "/v5/account/wallet-balance?accountType=UNIFIED"
-            }
-        case .kucoin (let walletType):
-            switch walletType {
-            case .spot:
-                return "/api/v1/accounts?type=main"
-            case .futures:
-                return "/api/v1/account-overview?currency=USDT"
-            case .unified:
-                return "xxx" // TODO: Placeholder, KuCoin doesn't have a unified wallet type
-            }
-        case .binance:
-            switch walletType {
-            case .spot:
-                return "xxx"
-            case .futures:
-                return "/fapi/v2/account"
-            case .unified:
-                return "xxx"
-            }
         }
     }
     

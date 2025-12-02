@@ -26,28 +26,30 @@ public extension APIRequestBuilder {
 
 @MainActor
 public struct APIRequestBuilderFactory {
-    public static func builder(for exchangeType: ExchangeType, creds: CredentialManagerProtocol) async -> APIRequestBuilder? {
+    public static func builder(for exchangeType: ApiRequestable, creds: CredentialManagerProtocol) async -> APIRequestBuilder? {
         let accountName = exchangeType.displayName
 
         guard let credentials = try? await creds.getCredentials(forAccount: accountName) else { return nil }
 
-        switch exchangeType {
-        case .bybit:
+        switch exchangeType.displayName {
+        case ExchangeName.bybit.rawValue:
             return BybitAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
-        case .kucoin:
+        case ExchangeName.kucoin.rawValue:
             return KuCoinAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
-        case .binance:
+        case ExchangeName.binance.rawValue:
             return BinanceAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
+        default:
+            return BybitAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
         }
     }
 }
 
 // MARK: concrete implementations
 struct BybitAPIRequestBuilder: APIRequestBuilder {
-    public let exchangeType: ExchangeType
+    public let exchangeType: ApiRequestable
     public let creds: Credentials
     
-    public init(exchangeType: ExchangeType, creds: Credentials) {
+    public init(exchangeType: ApiRequestable, creds: Credentials) {
         self.exchangeType = exchangeType
         self.creds = creds
     }
@@ -59,7 +61,8 @@ struct BybitAPIRequestBuilder: APIRequestBuilder {
         let timestamp = String(Int(Date().timeIntervalSince1970 * 1000))
         let recvWindow = "5000"
         // Sign with accountType matching selected wallet
-        let accountTypeParam: String = (exchangeType.walletType == .spot) ? "SPOT" : "UNIFIED"
+        // let accountTypeParam: String = (exchangeType.walletType == .spot) ? "SPOT" : "UNIFIED"
+        let accountTypeParam: String = "UNIFIED"
         let queryString = "accountType=\(accountTypeParam)"
         let signaturePayload = timestamp + creds.apiKey + recvWindow + queryString
         let signature = signaturePayload.hmacSHA256(key: creds.apiSecret)
@@ -74,11 +77,11 @@ struct BybitAPIRequestBuilder: APIRequestBuilder {
 }
 
 struct KuCoinAPIRequestBuilder: APIRequestBuilder {
-    public let exchangeType: ExchangeType
+    public let exchangeType: ApiRequestable
     public let creds: Credentials
     public let apiVersion: String = "3"
     
-    public init(exchangeType: ExchangeType, creds: Credentials) {
+    public init(exchangeType: ApiRequestable, creds: Credentials) {
         self.exchangeType = exchangeType
         self.creds = creds
     }
@@ -124,10 +127,10 @@ struct KuCoinAPIRequestBuilder: APIRequestBuilder {
 }
 
 struct BinanceAPIRequestBuilder: APIRequestBuilder {
-    public let exchangeType: ExchangeType
+    public let exchangeType: ApiRequestable
     public let creds: Credentials
     
-    public init(exchangeType: ExchangeType, creds: Credentials) {
+    public init(exchangeType: ApiRequestable, creds: Credentials) {
         self.exchangeType = exchangeType
         self.creds = creds
     }
