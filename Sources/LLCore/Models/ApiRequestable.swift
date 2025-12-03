@@ -11,14 +11,15 @@ public protocol ApiRequestable {
     var endpoint: String { get }
 }
 
+/// all the data need to build  API request. Can be overriden by the client app for testing puroses f.e.
 extension ExchangeType: ApiRequestable {
     public var displayName: String {
         self.name.rawValue
     }
     
     public var baseURL: String {
-        switch self {
-        case .bybit (let walletType):
+        switch name {
+        case .bybit:
             switch walletType {
             case .spot:
                 return "https://api.bybit.com"
@@ -27,7 +28,7 @@ extension ExchangeType: ApiRequestable {
             case .unified:
                 return "https://api.bybit.com"
             }
-        case .kucoin (let walletType):
+        case .kucoin:
             switch walletType {
             case .spot:
                 return "https://api.kucoin.com"
@@ -49,7 +50,7 @@ extension ExchangeType: ApiRequestable {
     }
     
     public var endpoint: String {
-        switch self {
+        switch name {
         case .bybit:
             switch walletType {
             case .spot:
@@ -59,7 +60,7 @@ extension ExchangeType: ApiRequestable {
             case .unified:
                 return "/v5/account/wallet-balance?accountType=UNIFIED"
             }
-        case .kucoin (let walletType):
+        case .kucoin:
             switch walletType {
             case .spot:
                 return "/api/v1/accounts?type=main"

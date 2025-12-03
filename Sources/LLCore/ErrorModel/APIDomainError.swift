@@ -42,7 +42,7 @@ public enum APIDomainError: Error, Equatable {
 
 /// Additional metadata for diagnostics and analytics (no secrets).
 public struct APIErrorContext: Equatable, Sendable {
-    public let exchange: ExchangeType
+    public let exchange: ExchangeName
     public let httpStatus: Int?
     public let apiCode: String?
     public let requestId: String?
@@ -50,7 +50,7 @@ public struct APIErrorContext: Equatable, Sendable {
     public let rawMessage: String?
 
     public init(
-        exchange: ExchangeType,
+        exchange: ExchangeName,
         httpStatus: Int? = nil,
         apiCode: String? = nil,
         requestId: String? = nil,
@@ -109,7 +109,7 @@ public extension APIDomainError {
     /// Human-readable, concise, and actionable message for display.
     /// Replace with proper localization lookup using `messageKey` when strings are added.
     var userMessage: String {
-        let exchangeName = context.exchange.displayName.capitalized
+        let exchangeName = context.exchange.rawValue.capitalized
         switch self {
         case .invalidCredentials:
             return "\(exchangeName) rejected your credentials. Re-enter API key and secret."

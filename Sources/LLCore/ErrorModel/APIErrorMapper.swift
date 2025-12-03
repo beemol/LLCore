@@ -21,13 +21,13 @@ public struct APIErrorMapper {
     }
 
     /// Maps a transport/network error into domain error when no HTTP response is available.
-    public static func mapNetworkError(_ error: Error, exchange: ExchangeType, endpoint: String?) -> APIDomainError {
+    public static func mapNetworkError(_ error: Error, exchange: ExchangeName, endpoint: String?) -> APIDomainError {
         let context = APIErrorContext(exchange: exchange, httpStatus: nil, apiCode: nil, requestId: nil, endpoint: endpoint, rawMessage: error.localizedDescription)
         return .network(context: context)
     }
 
     /// Maps an HTTP response + body into a domain error; returns nil for status 200.
-    public static func mapHTTPResponse(exchange: ExchangeType, endpoint: String?, data: Data, response: HTTPURLResponse) -> APIDomainError? {
+    public static func mapHTTPResponse(exchange: ExchangeName, endpoint: String?, data: Data, response: HTTPURLResponse) -> APIDomainError? {
         let status = response.statusCode
         guard status != 200 else { return nil }
 
@@ -72,7 +72,7 @@ public struct APIErrorMapper {
     }
 
     /// Parses a minimal error body for known exchanges without throwing.
-    private static func parseErrorBody(exchange: ExchangeType, data: Data) -> ParsedErrorBody {
+    private static func parseErrorBody(exchange: ExchangeName, data: Data) -> ParsedErrorBody {
         guard let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
             return ParsedErrorBody(code: nil, message: nil, requestId: nil)
         }
