@@ -9,7 +9,7 @@ import Foundation
 
 public struct ExchangeAPIErrorRegistry {
     /// Returns a domain error case for a given exchange and code/message context if known.
-    public static func map(exchange: ExchangeType, httpStatus: Int?, code: String?, message: String?, endpoint: String?) -> APIDomainError? {
+    public static func map(exchange: ExchangeName, httpStatus: Int?, code: String?, message: String?, endpoint: String?) -> APIDomainError? {
         let normalizedCode = code?.trimmingCharacters(in: .whitespacesAndNewlines)
         let context = APIErrorContext(exchange: exchange, httpStatus: httpStatus, apiCode: normalizedCode, requestId: nil, endpoint: endpoint, rawMessage: message)
 
