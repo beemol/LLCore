@@ -42,7 +42,7 @@ public enum APIDomainError: Error, Equatable {
 
 /// Additional metadata for diagnostics and analytics (no secrets).
 public struct APIErrorContext: Equatable, Sendable {
-    public let exchange: ExchangeName
+    public let exchange: ExchangeIdentifier
     public let httpStatus: Int?
     public let apiCode: String?
     public let requestId: String?
@@ -50,7 +50,7 @@ public struct APIErrorContext: Equatable, Sendable {
     public let rawMessage: String?
 
     public init(
-        exchange: ExchangeName,
+        exchange: ExchangeIdentifier,
         httpStatus: Int? = nil,
         apiCode: String? = nil,
         requestId: String? = nil,

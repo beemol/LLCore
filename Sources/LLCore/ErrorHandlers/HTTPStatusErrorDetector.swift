@@ -16,11 +16,11 @@ import LLApiService
 
 /// Composite error detector that checks HTTP status first, then delegates to app-level detector
 public struct HTTPStatusErrorDetector: LLDomainErrorDetector {
-    public let exchange: ExchangeName
+    public let exchange: ExchangeIdentifier
     public let endpoint: String
     public let appLevelDetector: LLDomainErrorDetector?
     
-    public init(exchange: ExchangeName, endpoint: String, appLevelDetector: LLDomainErrorDetector?) {
+    public init(exchange: ExchangeIdentifier, endpoint: String, appLevelDetector: LLDomainErrorDetector?) {
         self.exchange = exchange
         self.endpoint = endpoint
         self.appLevelDetector = appLevelDetector

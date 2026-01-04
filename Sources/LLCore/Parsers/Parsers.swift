@@ -25,7 +25,7 @@ public extension WalletDataParserProtocol {
 
 public struct WalletDataParserFactory {
     public static func parser(for exchange: ExchangeType) -> any WalletDataParserProtocol {
-        switch exchange.name {
+        switch exchange.identifier {
         case .bybit:
             switch exchange.walletType {
             case .spot:
@@ -39,6 +39,8 @@ public struct WalletDataParserFactory {
             return KuCoinWalletDataParser(walletType: exchange.walletType)
         case .binance:
             return BinanceWalletDataParser()
+        default:
+            return BybitUnifiedWalletDataParser()
         }
     }
 }
