@@ -11,7 +11,7 @@ import LLApiService
 /// Detects application-level errors in response body even when HTTP status is 200
 /// Different exchanges have different error response formats
 public struct AplicationErrorDetectorFactory {
-    public static func build(for exchangeName: ExchangeName) -> LLDomainErrorDetector? {
+    public static func build(for exchangeName: ExchangeIdentifier) -> LLDomainErrorDetector? {
 
         switch exchangeName {
         case .bybit:
@@ -20,6 +20,8 @@ public struct AplicationErrorDetectorFactory {
             return KucoinErrorDetector()
         case .binance:
             return BinanceErrorDetector()
+        default:
+            return nil
         }
     }
 }
@@ -28,7 +30,7 @@ public struct BybitErrorDetector: LLDomainErrorDetector {
     public init() {}
     
     public func detectError(data: Data, response: URLResponse) throws {
-        let exchange: ExchangeName = .bybit
+        let exchange: ExchangeIdentifier = .bybit
         let endpoint: String = (response as? HTTPURLResponse)?.url?.absoluteString ?? "Bybit Endpoint"
         
         guard let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
@@ -72,7 +74,7 @@ public struct KucoinErrorDetector: LLDomainErrorDetector {
     public init() {}
     
     public func detectError(data: Data, response: URLResponse) throws {
-        let exchange: ExchangeName = .kucoin
+        let exchange: ExchangeIdentifier = .kucoin
         let endpoint: String = (response as? HTTPURLResponse)?.url?.absoluteString ?? "Kucoin Endpoint"
         
         guard let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
@@ -114,7 +116,7 @@ public struct BinanceErrorDetector: LLDomainErrorDetector {
     public init() {}
     
     public func detectError(data: Data, response: URLResponse) throws {
-        let exchange: ExchangeName = .binance
+        let exchange: ExchangeIdentifier = .binance
         let endpoint: String = (response as? HTTPURLResponse)?.url?.absoluteString ?? "Binance Endpoint"
         
         guard let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {

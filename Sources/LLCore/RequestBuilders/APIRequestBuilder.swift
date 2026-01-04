@@ -8,6 +8,8 @@
 import Foundation
 import LLApiService
 
+public protocol ApiRequestable: ExchangeType {}
+
 public protocol CredentialManagerProtocol: Actor {
     func getCredentials(forAccount account: String) async throws -> Credentials
     func saveCredentials(key: String, secret: String, passphrase: String, forAccount account: String) async -> OSStatus
@@ -26,17 +28,17 @@ public extension APIRequestBuilder {
 
 @MainActor
 public struct APIRequestBuilderFactory {
-    public static func builder(for exchangeType: ApiRequestable, creds: CredentialManagerProtocol) async -> APIRequestBuilder? {
-        let accountName = exchangeType.displayName
+    public static func builder(for exchangeType: ExchangeType, creds: CredentialManagerProtocol) async -> APIRequestBuilder? {
+        let accountName = exchangeType.identifier
 
-        guard let credentials = try? await creds.getCredentials(forAccount: accountName) else { return nil }
+        guard let credentials = try? await creds.getCredentials(forAccount: accountName.rawValue) else { return nil }
 
-        switch exchangeType.displayName {
-        case ExchangeName.bybit.rawValue:
+        switch accountName {
+        case .bybit:
             return BybitAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
-        case ExchangeName.kucoin.rawValue:
+        case .kucoin:
             return KuCoinAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
-        case ExchangeName.binance.rawValue:
+        case .binance:
             return BinanceAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
         default:
             return BybitAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
@@ -46,10 +48,10 @@ public struct APIRequestBuilderFactory {
 
 // MARK: concrete implementations
 struct BybitAPIRequestBuilder: APIRequestBuilder {
-    public let exchangeType: ApiRequestable
+    public let exchangeType: ExchangeType
     public let creds: Credentials
     
-    public init(exchangeType: ApiRequestable, creds: Credentials) {
+    public init(exchangeType: ExchangeType, creds: Credentials) {
         self.exchangeType = exchangeType
         self.creds = creds
     }
@@ -77,11 +79,11 @@ struct BybitAPIRequestBuilder: APIRequestBuilder {
 }
 
 struct KuCoinAPIRequestBuilder: APIRequestBuilder {
-    public let exchangeType: ApiRequestable
+    public let exchangeType: ExchangeType
     public let creds: Credentials
     public let apiVersion: String = "3"
     
-    public init(exchangeType: ApiRequestable, creds: Credentials) {
+    public init(exchangeType: ExchangeType, creds: Credentials) {
         self.exchangeType = exchangeType
         self.creds = creds
     }
@@ -127,10 +129,10 @@ struct KuCoinAPIRequestBuilder: APIRequestBuilder {
 }
 
 struct BinanceAPIRequestBuilder: APIRequestBuilder {
-    public let exchangeType: ApiRequestable
+    public let exchangeType: ExchangeType
     public let creds: Credentials
     
-    public init(exchangeType: ApiRequestable, creds: Credentials) {
+    public init(exchangeType: ExchangeType, creds: Credentials) {
         self.exchangeType = exchangeType
         self.creds = creds
     }
