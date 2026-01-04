@@ -440,7 +440,7 @@ struct ErrorDetectorTests {
         func testHTTP401Error() throws {
             let appDetector = BybitErrorDetector()
             let detector = HTTPStatusErrorDetector(
-                exchange: .bybit(walletType: .unified),
+                exchange: .bybit,
                 endpoint: "/v5/account/wallet-balance",
                 appLevelDetector: appDetector
             )
@@ -462,7 +462,7 @@ struct ErrorDetectorTests {
         func testHTTP403Error() throws {
             let appDetector = BybitErrorDetector()
             let detector = HTTPStatusErrorDetector(
-                exchange: .bybit(walletType: .unified),
+                exchange: .bybit,
                 endpoint: "/v5/account/wallet-balance",
                 appLevelDetector: appDetector
             )
@@ -484,7 +484,7 @@ struct ErrorDetectorTests {
         func testHTTP429RateLimit() throws {
             let appDetector = BybitErrorDetector()
             let detector = HTTPStatusErrorDetector(
-                exchange: .bybit(walletType: .unified),
+                exchange: .bybit,
                 endpoint: "/v5/account/wallet-balance",
                 appLevelDetector: appDetector
             )
@@ -512,7 +512,7 @@ struct ErrorDetectorTests {
         func testHTTP500ServerError() throws {
             let appDetector = BybitErrorDetector()
             let detector = HTTPStatusErrorDetector(
-                exchange: .bybit(walletType: .unified),
+                exchange: .bybit,
                 endpoint: "/v5/account/wallet-balance",
                 appLevelDetector: appDetector
             )
@@ -540,7 +540,7 @@ struct ErrorDetectorTests {
         func testDelegatesToAppLevelDetector() throws {
             let appDetector = BybitErrorDetector()
             let detector = HTTPStatusErrorDetector(
-                exchange: .bybit(walletType: .unified),
+                exchange: .bybit,
                 endpoint: "/v5/account/wallet-balance",
                 appLevelDetector: appDetector
             )
@@ -568,7 +568,7 @@ struct ErrorDetectorTests {
         func testSuccessResponse() throws {
             let appDetector = BybitErrorDetector()
             let detector = HTTPStatusErrorDetector(
-                exchange: .bybit(walletType: .unified),
+                exchange: .bybit,
                 endpoint: "/v5/account/wallet-balance",
                 appLevelDetector: appDetector
             )
@@ -586,4 +586,3 @@ struct ErrorDetectorTests {
         }
     }
 }
-

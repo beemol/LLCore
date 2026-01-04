@@ -67,7 +67,7 @@ struct APIServiceIntegrationTests {
         
         // When & Then
         do {
-            _ = try await apiService.fetchWalletBalance(for: .bybit(walletType: .unified))
+            _ = try await apiService.fetchWalletBalance(for: Exchange(.bybit, wallet: .unified))
             Issue.record("Expected APIDomainError to be thrown")
         } catch let error as APIDomainError {
             guard case .keyRevokedOrInactive(let context) = error else {
@@ -76,7 +76,7 @@ struct APIServiceIntegrationTests {
             }
             #expect(context.apiCode == "33004")
             #expect(context.rawMessage == "Your api key has expired.")
-            #expect(context.exchange == .bybit(walletType: .unified))
+            #expect(context.exchange == .bybit)
             #expect(context.httpStatus == 200)
         } catch {
             Issue.record("Expected APIDomainError, got \(error)")
@@ -99,7 +99,7 @@ struct APIServiceIntegrationTests {
         await setupMockResponse(data: errorResponse, statusCode: 200)
         
         do {
-            _ = try await apiService.fetchWalletBalance(for: .bybit(walletType: .unified))
+            _ = try await apiService.fetchWalletBalance(for: Exchange(.bybit, wallet: .unified))
             Issue.record("Expected APIDomainError to be thrown")
         } catch let error as APIDomainError {
             guard case .signatureInvalid(let context) = error else {
@@ -108,7 +108,7 @@ struct APIServiceIntegrationTests {
             }
             #expect(context.apiCode == "10004")
             #expect(context.rawMessage == "Invalid signature")
-            #expect(context.exchange == .bybit(walletType: .unified))
+            #expect(context.exchange == .bybit)
         } catch {
             Issue.record("Expected APIDomainError, got \(error)")
         }
@@ -130,7 +130,7 @@ struct APIServiceIntegrationTests {
         await setupMockResponse(data: errorResponse, statusCode: 200)
         
         do {
-            _ = try await apiService.fetchWalletBalance(for: .bybit(walletType: .unified))
+            _ = try await apiService.fetchWalletBalance(for: Exchange(.bybit, wallet: .unified))
             Issue.record("Expected APIDomainError to be thrown")
         } catch let error as APIDomainError {
             guard case .ipNotAllowed(let context) = error else {
@@ -160,7 +160,7 @@ struct APIServiceIntegrationTests {
         await setupMockResponse(data: errorResponse, statusCode: 200)
         
         do {
-            _ = try await apiService.fetchWalletBalance(for: .bybit(walletType: .unified))
+            _ = try await apiService.fetchWalletBalance(for: Exchange(.bybit, wallet: .unified))
             Issue.record("Expected APIDomainError to be thrown")
         } catch let error as APIDomainError {
             guard case .rateLimited(let context) = error else {
@@ -190,7 +190,7 @@ struct APIServiceIntegrationTests {
         await setupMockResponse(data: errorResponse, statusCode: 200)
         
         do {
-            _ = try await apiService.fetchWalletBalance(for: .bybit(walletType: .unified))
+            _ = try await apiService.fetchWalletBalance(for: Exchange(.bybit, wallet: .unified))
             Issue.record("Expected APIDomainError to be thrown")
         } catch let error as APIDomainError {
             guard case .permissionDenied(let context) = error else {
@@ -220,7 +220,7 @@ struct APIServiceIntegrationTests {
         await setupMockResponse(data: errorResponse, statusCode: 200)
         
         do {
-            _ = try await apiService.fetchWalletBalance(for: .bybit(walletType: .unified))
+            _ = try await apiService.fetchWalletBalance(for: Exchange(.bybit, wallet: .unified))
             Issue.record("Expected APIDomainError to be thrown")
         } catch let error as APIDomainError {
             guard case .unknown(let context) = error else {
@@ -249,7 +249,7 @@ struct APIServiceIntegrationTests {
         await setupMockResponse(data: errorResponse, statusCode: 200)
         
         do {
-            _ = try await apiService.fetchWalletBalance(for: .kucoin(walletType: .futures))
+            _ = try await apiService.fetchWalletBalance(for: Exchange(.kucoin, wallet: .futures))
             Issue.record("Expected APIDomainError to be thrown")
         } catch let error as APIDomainError {
             guard case .invalidCredentials(let context) = error else {
@@ -258,7 +258,7 @@ struct APIServiceIntegrationTests {
             }
             #expect(context.apiCode == "400003")
             #expect(context.rawMessage == "KC-API-KEY not exists")
-            #expect(context.exchange == .kucoin(walletType: .futures))
+            #expect(context.exchange == .kucoin)
         } catch {
             Issue.record("Expected APIDomainError, got \(error)")
         }
@@ -277,7 +277,7 @@ struct APIServiceIntegrationTests {
         await setupMockResponse(data: errorResponse, statusCode: 200)
         
         do {
-            _ = try await apiService.fetchWalletBalance(for: .kucoin(walletType: .futures))
+            _ = try await apiService.fetchWalletBalance(for: Exchange(.kucoin, wallet: .futures))
             Issue.record("Expected APIDomainError to be thrown")
         } catch let error as APIDomainError {
             guard case .signatureInvalid(let context) = error else {
@@ -304,7 +304,7 @@ struct APIServiceIntegrationTests {
         await setupMockResponse(data: errorResponse, statusCode: 200)
         
         do {
-            _ = try await apiService.fetchWalletBalance(for: .kucoin(walletType: .futures))
+            _ = try await apiService.fetchWalletBalance(for: Exchange(.kucoin, wallet: .futures))
             Issue.record("Expected APIDomainError to be thrown")
         } catch let error as APIDomainError {
             guard case .rateLimited(let context) = error else {
@@ -333,7 +333,7 @@ struct APIServiceIntegrationTests {
         await setupMockResponse(data: errorResponse, statusCode: 200)
         
         do {
-            _ = try await apiService.fetchWalletBalance(for: .binance(walletType: .futures))
+            _ = try await apiService.fetchWalletBalance(for: Exchange(.binance, wallet: .futures))
             Issue.record("Expected APIDomainError to be thrown")
         } catch let error as APIDomainError {
             guard case .invalidCredentials(let context) = error else {
@@ -342,7 +342,7 @@ struct APIServiceIntegrationTests {
             }
             #expect(context.apiCode == "-2014")
             #expect(context.rawMessage == "API-key format invalid.")
-            #expect(context.exchange == .binance(walletType: .futures))
+            #expect(context.exchange == .binance)
         } catch {
             Issue.record("Expected APIDomainError, got \(error)")
         }
@@ -361,7 +361,7 @@ struct APIServiceIntegrationTests {
         await setupMockResponse(data: errorResponse, statusCode: 200)
         
         do {
-            _ = try await apiService.fetchWalletBalance(for: .binance(walletType: .futures))
+            _ = try await apiService.fetchWalletBalance(for: Exchange(.binance, wallet: .futures))
             Issue.record("Expected APIDomainError to be thrown")
         } catch let error as APIDomainError {
             guard case .signatureInvalid(let context) = error else {
@@ -388,7 +388,7 @@ struct APIServiceIntegrationTests {
         await setupMockResponse(data: errorResponse, statusCode: 200)
         
         do {
-            _ = try await apiService.fetchWalletBalance(for: .binance(walletType: .futures))
+            _ = try await apiService.fetchWalletBalance(for: Exchange(.binance, wallet: .futures))
             Issue.record("Expected APIDomainError to be thrown")
         } catch let error as APIDomainError {
             guard case .timestampOutOfRange(let context) = error else {
@@ -423,7 +423,7 @@ struct APIServiceIntegrationTests {
         await setupMockResponse(data: successResponse, statusCode: 200)
         
         do {
-            let data = try await apiService.fetchWalletBalance(for: .bybit(walletType: .unified))
+            let data = try await apiService.fetchWalletBalance(for: Exchange(.bybit, wallet: .unified))
             #expect(data.totalEquity == 1000.00)
             #expect(data.walletBalance == 900.00)
         } catch {
@@ -450,7 +450,7 @@ struct APIServiceIntegrationTests {
         await setupMockResponse(data: successResponse, statusCode: 200)
         
         do {
-            _ = try await apiService.fetchWalletBalance(for: .kucoin(walletType: .unified))
+            _ = try await apiService.fetchWalletBalance(for: Exchange(.kucoin, wallet: .unified))
         } catch let error as APIDomainError {
             Issue.record("Should not throw APIDomainError for successful response, got \(error)")
         } catch {
@@ -469,7 +469,7 @@ struct APIServiceIntegrationTests {
         await setupMockResponse(data: invalidResponse, statusCode: 200)
         
         do {
-            _ = try await apiService.fetchWalletBalance(for: .bybit(walletType: .unified))
+            _ = try await apiService.fetchWalletBalance(for: Exchange(.bybit, wallet: .unified))
             Issue.record("Expected parse error")
         } catch let error as APIDomainError {
             Issue.record("Should not throw APIDomainError for invalid JSON, got \(error)")
@@ -485,7 +485,7 @@ struct APIServiceIntegrationTests {
         await setupMockResponse(data: "", statusCode: 200)
         
         do {
-            _ = try await apiService.fetchWalletBalance(for: .bybit(walletType: .unified))
+            _ = try await apiService.fetchWalletBalance(for: Exchange(.bybit, wallet: .unified))
             Issue.record("Expected parse error")
         } catch let error as APIDomainError {
             Issue.record("Should not throw APIDomainError for empty response, got \(error)")
@@ -523,7 +523,7 @@ struct APIServiceIntegrationTests {
         await setupMockResponse(data: successResponse, statusCode: 200)
         
         do {
-            let data = try await apiService.fetchWalletBalance(for: .bybit(walletType: .unified))
+            let data = try await apiService.fetchWalletBalance(for: Exchange(.bybit, wallet: .unified))
             #expect(data.walletBalance == 123.45)
             #expect(data.totalEquity == 123.45) // equity falls back to walletBalance for SPOT
         } catch {
@@ -545,7 +545,7 @@ struct APIServiceIntegrationTests {
         await setupMockResponse(data: errorResponse, statusCode: 401)
         
         do {
-            _ = try await apiService.fetchWalletBalance(for: .bybit(walletType: .unified))
+            _ = try await apiService.fetchWalletBalance(for: Exchange(.bybit, wallet: .unified))
             Issue.record("Expected APIDomainError to be thrown")
         } catch is APIDomainError {
             // Should still map HTTP errors correctly - the exact error type depends on APIErrorMapper
@@ -574,14 +574,14 @@ class MockSettingsService: SettingsServiceProtocol {
     var setExchangeTypeCalled = false
     var setUpdateFrequencyUnlockedCalled = false
     var lastUpdateFrequency: Double?
-    var lastExchangeType: ExchangeType?
+    var lastExchangeType: Exchange?
     
     var state: SettingsState {
         realService.state
     }
     
     // Convenience accessors used in tests
-    var exchangeType: ExchangeType {
+    var exchangeType: Exchange {
         get { state.exchangeType }
         set { setExchangeType(newValue) }
     }
@@ -593,7 +593,7 @@ class MockSettingsService: SettingsServiceProtocol {
         realService = SettingsService(storage: mockStorage)
         
         // Override defaults for tests to match previous behavior
-        realService.setExchangeType(.bybit(walletType: .spot))
+        realService.setExchangeType(Exchange(.bybit, wallet: .spot))
     }
 
     func setUpdateFrequencyUnlocked(_ unlocked: Bool) {
@@ -607,7 +607,7 @@ class MockSettingsService: SettingsServiceProtocol {
         realService.setUpdateFrequency(frequency)
     }
 
-    func setExchangeType(_ exchangeType: ExchangeType) {
+    func setExchangeType(_ exchangeType: Exchange) {
         setExchangeTypeCalled = true
         lastExchangeType = exchangeType
         realService.setExchangeType(exchangeType)
@@ -623,7 +623,7 @@ class MockSettingsService: SettingsServiceProtocol {
         // Reset storage and reinitialize to defaults
         mockStorage.reset()
         realService.setUpdateFrequency(5.0)
-        realService.setExchangeType(.bybit(walletType: .spot))
+        realService.setExchangeType(Exchange(.bybit, wallet: .spot))
         realService.setUpdateFrequencyUnlocked(false)
     }
 }
@@ -651,12 +651,12 @@ class MockUserDataStorage {
 protocol SettingsServiceProtocol {
     var state: SettingsState { get }
     func setUpdateFrequency(_ frequency: Double)
-    func setExchangeType(_ exchangeType: ExchangeType)
+    func setExchangeType(_ exchangeType: Exchange)
     func setUpdateFrequencyUnlocked(_ unlocked: Bool)
 }
 
 struct SettingsState {
-    var exchangeType: ExchangeType
+    var exchangeType: Exchange
     var updateFrequency: Double
     var isUpdateFrequencyUnlocked: Bool
 }
@@ -666,7 +666,7 @@ class SettingsService: SettingsServiceProtocol {
     
     var state: SettingsState {
         SettingsState(
-            exchangeType: (storage.object(forKey: "exchangeType") as? ExchangeType) ?? .bybit(walletType: .spot),
+            exchangeType: (storage.object(forKey: "exchangeType") as? Exchange) ?? Exchange(.bybit, wallet: .spot),
             updateFrequency: (storage.object(forKey: "updateFrequency") as? Double) ?? 5.0,
             isUpdateFrequencyUnlocked: (storage.object(forKey: "isUpdateFrequencyUnlocked") as? Bool) ?? false
         )
@@ -680,7 +680,7 @@ class SettingsService: SettingsServiceProtocol {
         storage.set(frequency, forKey: "updateFrequency")
     }
     
-    func setExchangeType(_ exchangeType: ExchangeType) {
+    func setExchangeType(_ exchangeType: Exchange) {
         storage.set(exchangeType, forKey: "exchangeType")
     }
     
@@ -701,7 +701,7 @@ class TestAPIServiceWrapper {
         self.credentialManager = credentialManager
     }
     
-    func fetchWalletBalance(for exchangeType: ExchangeType) async throws -> WalletData {
+    func fetchWalletBalance(for exchangeType: any ExchangeType) async throws -> WalletData {
         // Build request
         guard let requestBuilder = await APIRequestBuilderFactory.builder(
             for: exchangeType,
@@ -718,9 +718,9 @@ class TestAPIServiceWrapper {
         let (data, response) = try await urlSession.data(for: request)
         
         // Detect errors
-        let appDetector = AplicationErrorDetectorFactory.build(for: exchangeType)
+        let appDetector = AplicationErrorDetectorFactory.build(for: exchangeType.identifier)
         let errorDetector = HTTPStatusErrorDetector(
-            exchange: exchangeType,
+            exchange: exchangeType.identifier,
             endpoint: exchangeType.endpoint,
             appLevelDetector: appDetector
         )
@@ -732,4 +732,3 @@ class TestAPIServiceWrapper {
         return try parser.parse(data: data)
     }
 }
-

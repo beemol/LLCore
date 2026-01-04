@@ -19,7 +19,6 @@ struct ErrorMapperTests {
         
         @Test("Maps HTTP 401 to invalidCredentials")
         func testMapsHTTP401() {
-            let exchange = ExchangeType.bybit(walletType: .unified)
             let data = "{}".data(using: .utf8)!
             let response = HTTPURLResponse(
                 url: URL(string: "https://api.bybit.com")!,
@@ -29,7 +28,7 @@ struct ErrorMapperTests {
             )!
             
             let error = APIErrorMapper.mapHTTPResponse(
-                exchange: exchange,
+                exchange: .bybit,
                 endpoint: "/test",
                 data: data,
                 response: response
@@ -45,7 +44,6 @@ struct ErrorMapperTests {
         
         @Test("Maps HTTP 403 to permissionDenied")
         func testMapsHTTP403() {
-            let exchange = ExchangeType.bybit(walletType: .unified)
             let data = "{}".data(using: .utf8)!
             let response = HTTPURLResponse(
                 url: URL(string: "https://api.bybit.com")!,
@@ -55,7 +53,7 @@ struct ErrorMapperTests {
             )!
             
             let error = APIErrorMapper.mapHTTPResponse(
-                exchange: exchange,
+                exchange: .bybit,
                 endpoint: "/test",
                 data: data,
                 response: response
@@ -71,7 +69,6 @@ struct ErrorMapperTests {
         
         @Test("Maps HTTP 429 to rateLimited")
         func testMapsHTTP429() {
-            let exchange = ExchangeType.bybit(walletType: .unified)
             let data = "{}".data(using: .utf8)!
             let response = HTTPURLResponse(
                 url: URL(string: "https://api.bybit.com")!,
@@ -81,7 +78,7 @@ struct ErrorMapperTests {
             )!
             
             let error = APIErrorMapper.mapHTTPResponse(
-                exchange: exchange,
+                exchange: .bybit,
                 endpoint: "/test",
                 data: data,
                 response: response
@@ -97,7 +94,6 @@ struct ErrorMapperTests {
         
         @Test("Maps HTTP 500 to server error")
         func testMapsHTTP500() {
-            let exchange = ExchangeType.bybit(walletType: .unified)
             let data = "{}".data(using: .utf8)!
             let response = HTTPURLResponse(
                 url: URL(string: "https://api.bybit.com")!,
@@ -107,7 +103,7 @@ struct ErrorMapperTests {
             )!
             
             let error = APIErrorMapper.mapHTTPResponse(
-                exchange: exchange,
+                exchange: .bybit,
                 endpoint: "/test",
                 data: data,
                 response: response
@@ -123,7 +119,6 @@ struct ErrorMapperTests {
         
         @Test("Maps HTTP 503 with maintenance message to maintenance")
         func testMapsHTTP503Maintenance() {
-            let exchange = ExchangeType.bybit(walletType: .unified)
             let data = """
             {
                 "message": "System under maintenance"
@@ -137,7 +132,7 @@ struct ErrorMapperTests {
             )!
             
             let error = APIErrorMapper.mapHTTPResponse(
-                exchange: exchange,
+                exchange: .bybit,
                 endpoint: "/test",
                 data: data,
                 response: response
@@ -154,7 +149,6 @@ struct ErrorMapperTests {
         
         @Test("Returns nil for HTTP 200")
         func testReturnsNilForHTTP200() {
-            let exchange = ExchangeType.bybit(walletType: .unified)
             let data = "{}".data(using: .utf8)!
             let response = HTTPURLResponse(
                 url: URL(string: "https://api.bybit.com")!,
@@ -164,7 +158,7 @@ struct ErrorMapperTests {
             )!
             
             let error = APIErrorMapper.mapHTTPResponse(
-                exchange: exchange,
+                exchange: .bybit,
                 endpoint: "/test",
                 data: data,
                 response: response
@@ -175,7 +169,6 @@ struct ErrorMapperTests {
         
         @Test("Maps unknown HTTP status to unknown error")
         func testMapsUnknownStatus() {
-            let exchange = ExchangeType.bybit(walletType: .unified)
             let data = "{}".data(using: .utf8)!
             let response = HTTPURLResponse(
                 url: URL(string: "https://api.bybit.com")!,
@@ -185,7 +178,7 @@ struct ErrorMapperTests {
             )!
             
             let error = APIErrorMapper.mapHTTPResponse(
-                exchange: exchange,
+                exchange: .bybit,
                 endpoint: "/test",
                 data: data,
                 response: response
@@ -207,12 +200,11 @@ struct ErrorMapperTests {
         
         @Test("Maps network error")
         func testMapsNetworkError() {
-            let exchange = ExchangeType.bybit(walletType: .unified)
             let networkError = URLError(.notConnectedToInternet)
             
             let error = APIErrorMapper.mapNetworkError(
                 networkError,
-                exchange: exchange,
+                exchange: .bybit,
                 endpoint: "/test"
             )
             
@@ -227,12 +219,11 @@ struct ErrorMapperTests {
         
         @Test("Includes error description in context")
         func testIncludesErrorDescription() {
-            let exchange = ExchangeType.bybit(walletType: .unified)
             let networkError = URLError(.timedOut)
             
             let error = APIErrorMapper.mapNetworkError(
                 networkError,
-                exchange: exchange,
+                exchange: .bybit,
                 endpoint: "/test"
             )
             
@@ -251,7 +242,6 @@ struct ErrorMapperTests {
         
         @Test("Parses Bybit error body")
         func testParsesBybitErrorBody() {
-            let exchange = ExchangeType.bybit(walletType: .unified)
             let data = """
             {
                 "retCode": 10004,
@@ -267,7 +257,7 @@ struct ErrorMapperTests {
             )!
             
             let error = APIErrorMapper.mapHTTPResponse(
-                exchange: exchange,
+                exchange: .bybit,
                 endpoint: "/test",
                 data: data,
                 response: response
@@ -281,7 +271,6 @@ struct ErrorMapperTests {
         
         @Test("Parses KuCoin error body")
         func testParsesKuCoinErrorBody() {
-            let exchange = ExchangeType.kucoin(walletType: .futures)
             let data = """
             {
                 "code": "400005",
@@ -297,7 +286,7 @@ struct ErrorMapperTests {
             )!
             
             let error = APIErrorMapper.mapHTTPResponse(
-                exchange: exchange,
+                exchange: .kucoin,
                 endpoint: "/test",
                 data: data,
                 response: response
@@ -312,7 +301,6 @@ struct ErrorMapperTests {
         
         @Test("Parses Binance error body with integer code")
         func testParsesBinanceErrorBodyWithIntCode() {
-            let exchange = ExchangeType.binance(walletType: .futures)
             let data = """
             {
                 "code": -1022,
@@ -327,7 +315,7 @@ struct ErrorMapperTests {
             )!
             
             let error = APIErrorMapper.mapHTTPResponse(
-                exchange: exchange,
+                exchange: .binance,
                 endpoint: "/test",
                 data: data,
                 response: response
@@ -341,7 +329,6 @@ struct ErrorMapperTests {
         
         @Test("Handles invalid JSON in error body")
         func testHandlesInvalidJSON() {
-            let exchange = ExchangeType.bybit(walletType: .unified)
             let data = "{ invalid json".data(using: .utf8)!
             let response = HTTPURLResponse(
                 url: URL(string: "https://api.bybit.com")!,
@@ -351,7 +338,7 @@ struct ErrorMapperTests {
             )!
             
             let error = APIErrorMapper.mapHTTPResponse(
-                exchange: exchange,
+                exchange: .bybit,
                 endpoint: "/test",
                 data: data,
                 response: response
@@ -373,10 +360,8 @@ struct ErrorMapperTests {
         
         @Test("Maps Binance signature error")
         func testMapsBinanceSignatureError() {
-            let exchange = ExchangeType.binance(walletType: .futures)
-            
             let error = ExchangeAPIErrorRegistry.map(
-                exchange: exchange,
+                exchange: .binance,
                 httpStatus: 401,
                 code: "-1022",
                 message: "Signature invalid",
@@ -392,10 +377,8 @@ struct ErrorMapperTests {
         
         @Test("Maps Binance timestamp error")
         func testMapsBinanceTimestampError() {
-            let exchange = ExchangeType.binance(walletType: .futures)
-            
             let error = ExchangeAPIErrorRegistry.map(
-                exchange: exchange,
+                exchange: .binance,
                 httpStatus: 401,
                 code: "-1021",
                 message: "Timestamp out of range",
@@ -411,10 +394,8 @@ struct ErrorMapperTests {
         
         @Test("Maps Bybit IP not allowed error")
         func testMapsBybitIPNotAllowedError() {
-            let exchange = ExchangeType.bybit(walletType: .unified)
-            
             let error = ExchangeAPIErrorRegistry.map(
-                exchange: exchange,
+                exchange: .bybit,
                 httpStatus: 403,
                 code: "10018",
                 message: "IP not allowed",
@@ -430,10 +411,8 @@ struct ErrorMapperTests {
         
         @Test("Maps KuCoin invalid credentials error")
         func testMapsKuCoinInvalidCredentialsError() {
-            let exchange = ExchangeType.kucoin(walletType: .futures)
-            
             let error = ExchangeAPIErrorRegistry.map(
-                exchange: exchange,
+                exchange: .kucoin,
                 httpStatus: 401,
                 code: "401001",
                 message: "Invalid credentials",
@@ -449,10 +428,8 @@ struct ErrorMapperTests {
         
         @Test("Returns nil for unknown error codes")
         func testReturnsNilForUnknownCodes() {
-            let exchange = ExchangeType.bybit(walletType: .unified)
-            
             let error = ExchangeAPIErrorRegistry.map(
-                exchange: exchange,
+                exchange: .bybit,
                 httpStatus: 400,
                 code: "99999",
                 message: "Unknown error",
@@ -464,10 +441,8 @@ struct ErrorMapperTests {
         
         @Test("Handles nil error code")
         func testHandlesNilErrorCode() {
-            let exchange = ExchangeType.bybit(walletType: .unified)
-            
             let error = ExchangeAPIErrorRegistry.map(
-                exchange: exchange,
+                exchange: .bybit,
                 httpStatus: 400,
                 code: nil,
                 message: "Some error",
@@ -485,7 +460,6 @@ struct ErrorMapperTests {
         
         @Test("Context includes all fields")
         func testContextIncludesAllFields() {
-            let exchange = ExchangeType.bybit(walletType: .unified)
             let data = """
             {
                 "retCode": 10004,
@@ -501,7 +475,7 @@ struct ErrorMapperTests {
             )!
             
             let error = APIErrorMapper.mapHTTPResponse(
-                exchange: exchange,
+                exchange: .bybit,
                 endpoint: "/test",
                 data: data,
                 response: response
@@ -509,7 +483,7 @@ struct ErrorMapperTests {
             
             #expect(error != nil)
             let context = error?.context
-            #expect(context?.exchange == exchange)
+            #expect(context?.exchange == .bybit)
             #expect(context?.httpStatus == 401)
             #expect(context?.apiCode == "10004")
             #expect(context?.endpoint == "/test")
@@ -519,7 +493,7 @@ struct ErrorMapperTests {
         @Test("Context is equatable")
         func testContextEquatable() {
             let context1 = APIErrorContext(
-                exchange: .bybit(walletType: .unified),
+                exchange: .bybit,
                 httpStatus: 401,
                 apiCode: "10004",
                 requestId: "test-id",
@@ -528,7 +502,7 @@ struct ErrorMapperTests {
             )
             
             let context2 = APIErrorContext(
-                exchange: .bybit(walletType: .unified),
+                exchange: .bybit,
                 httpStatus: 401,
                 apiCode: "10004",
                 requestId: "test-id",
@@ -542,7 +516,7 @@ struct ErrorMapperTests {
         @Test("Context is sendable")
         func testContextSendable() {
             let context = APIErrorContext(
-                exchange: .bybit(walletType: .unified),
+                exchange: .bybit,
                 httpStatus: 401,
                 apiCode: "10004",
                 requestId: nil,
@@ -557,4 +531,3 @@ struct ErrorMapperTests {
         }
     }
 }
-

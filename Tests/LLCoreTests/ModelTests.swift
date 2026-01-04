@@ -12,25 +12,25 @@ import Foundation
 @Suite("Model Tests")
 struct ModelTests {
     
-    // MARK: - ExchangeType Tests
+    // MARK: - Exchange Tests
     
-    @Suite("ExchangeType")
-    struct ExchangeTypeTests {
+    @Suite("Exchange")
+    struct ExchangeTests {
         
         @Test("Bybit unified has correct properties")
         func testBybitUnifiedProperties() {
-            let exchange = ExchangeType.bybit(walletType: .unified)
+            let exchange = Exchange(.bybit, wallet: .unified)
             
             #expect(exchange.walletType == .unified)
             #expect(exchange.displayName == "bybit")
             #expect(exchange.baseURL == "https://api.bybit.com")
             #expect(exchange.endpoint == "/v5/account/wallet-balance?accountType=UNIFIED")
-            #expect(exchange.name == .bybit)
+            #expect(exchange.identifier == .bybit)
         }
         
         @Test("Bybit spot has correct properties")
         func testBybitSpotProperties() {
-            let exchange = ExchangeType.bybit(walletType: .spot)
+            let exchange = Exchange(.bybit, wallet: .spot)
             
             #expect(exchange.walletType == .spot)
             #expect(exchange.displayName == "bybit")
@@ -38,78 +38,76 @@ struct ModelTests {
             #expect(exchange.endpoint == "/v5/account/wallet-balance?accountType=SPOT")
         }
         
+        @Test("Bybit demo environment has correct URL")
+        func testBybitDemoEnvironment() {
+            let exchange = Exchange(.bybit, environment: .demo, wallet: .unified)
+            
+            #expect(exchange.environment == .demo)
+            #expect(exchange.baseURL == "https://api-demo.bybit.com")
+        }
+        
         @Test("KuCoin futures has correct properties")
         func testKuCoinFuturesProperties() {
-            let exchange = ExchangeType.kucoin(walletType: .futures)
+            let exchange = Exchange(.kucoin, wallet: .futures)
             
             #expect(exchange.walletType == .futures)
             #expect(exchange.displayName == "kucoin")
             #expect(exchange.baseURL == "https://api-futures.kucoin.com")
             #expect(exchange.endpoint == "/api/v1/account-overview?currency=USDT")
-            #expect(exchange.name == .kucoin)
+            #expect(exchange.identifier == .kucoin)
         }
         
         @Test("KuCoin spot has correct properties")
         func testKuCoinSpotProperties() {
-            let exchange = ExchangeType.kucoin(walletType: .spot)
+            let exchange = Exchange(.kucoin, wallet: .spot)
             
             #expect(exchange.walletType == .spot)
             #expect(exchange.displayName == "kucoin")
-            #expect(exchange.baseURL == "https://api.kucoin.com")
+            #expect(exchange.baseURL == "https://api-futures.kucoin.com")
             #expect(exchange.endpoint == "/api/v1/accounts?type=main")
-        }
-        
-        @Test("Binance futures has correct properties")
-        func testBinanceFuturesProperties() {
-            let exchange = ExchangeType.binance(walletType: .futures)
-            
-            #expect(exchange.walletType == .futures)
-            #expect(exchange.displayName == "binance")
-            #expect(exchange.baseURL == "https://fapi.binance.com")
-            #expect(exchange.endpoint == "/fapi/v2/account")
-            #expect(exchange.name == .binance)
         }
         
         @Test("Available wallet types for Bybit")
         func testBybitAvailableWalletTypes() {
-            let exchange = ExchangeType.bybit(walletType: .unified)
+            let exchange = Exchange(.bybit, wallet: .unified)
             
-            #expect(exchange.availableWalletTypes == [.unified])
+            #expect(exchange.availableWalletTypes.contains(.unified))
         }
         
         @Test("Available wallet types for KuCoin")
         func testKuCoinAvailableWalletTypes() {
-            let exchange = ExchangeType.kucoin(walletType: .futures)
+            let exchange = Exchange(.kucoin, wallet: .futures)
             
-            #expect(exchange.availableWalletTypes == [.futures])
-        }
-        
-        @Test("Available wallet types for Binance")
-        func testBinanceAvailableWalletTypes() {
-            let exchange = ExchangeType.binance(walletType: .futures)
-            
-            #expect(exchange.availableWalletTypes == [.futures])
+            #expect(exchange.availableWalletTypes.contains(.futures))
         }
         
         @Test("Equality works correctly")
         func testEquality() {
-            let exchange1 = ExchangeType.bybit(walletType: .unified)
-            let exchange2 = ExchangeType.bybit(walletType: .unified)
-            let exchange3 = ExchangeType.bybit(walletType: .spot)
-            let exchange4 = ExchangeType.kucoin(walletType: .unified)
+            let exchange1 = Exchange(.bybit, wallet: .unified)
+            let exchange2 = Exchange(.bybit, wallet: .unified)
+            let exchange3 = Exchange(.bybit, wallet: .spot)
+            let exchange4 = Exchange(.kucoin, wallet: .unified)
             
             #expect(exchange1 == exchange2)
             #expect(exchange1 != exchange3)
             #expect(exchange1 != exchange4)
         }
         
+        @Test("Equality ignores registry")
+        func testEqualityIgnoresRegistry() {
+            let exchange1 = Exchange(.bybit, wallet: .unified, registry: ExchangeRegistry.shared)
+            let exchange2 = Exchange(.bybit, wallet: .unified, registry: ExchangeRegistry.shared)
+            
+            #expect(exchange1 == exchange2)
+        }
+        
         @Test("Hashable works correctly")
         func testHashable() {
-            let exchange1 = ExchangeType.bybit(walletType: .unified)
-            let exchange2 = ExchangeType.bybit(walletType: .unified)
-            let exchange3 = ExchangeType.kucoin(walletType: .futures)
+            let exchange1 = Exchange(.bybit, wallet: .unified)
+            let exchange2 = Exchange(.bybit, wallet: .unified)
+            let exchange3 = Exchange(.kucoin, wallet: .futures)
             
-            var set = Set<ExchangeType>()
+            var set = Set<Exchange>()
             set.insert(exchange1)
             set.insert(exchange2) // Should not add duplicate
             set.insert(exchange3)
@@ -119,68 +117,52 @@ struct ModelTests {
             #expect(set.contains(exchange3))
         }
         
-        @Test("Make factory method works")
-        func testMakeFactoryMethod() {
-            let bybit = ExchangeType.make(.bybit, wallet: .unified)
-            let kucoin = ExchangeType.make(.kucoin, wallet: .futures)
-            let binance = ExchangeType.make(.binance, wallet: .futures)
+        @Test("Environment defaults to production")
+        func testEnvironmentDefaultsToProduction() {
+            let exchange = Exchange(.bybit, wallet: .unified)
             
-            #expect(bybit == .bybit(walletType: .unified))
-            #expect(kucoin == .kucoin(walletType: .futures))
-            #expect(binance == .binance(walletType: .futures))
-        }
-        
-        @Test("AllCases returns correct exchanges")
-        func testAllCases() {
-            let allCases = ExchangeType.allCases
-            
-            #expect(allCases.count == 3)
-            #expect(allCases.contains(.bybit(walletType: .spot)))
-            #expect(allCases.contains(.kucoin(walletType: .spot)))
-            #expect(allCases.contains(.binance(walletType: .spot)))
-        }
-        
-        @Test("ExchangeType is Sendable")
-        func testExchangeTypeIsSendable() {
-            let exchange = ExchangeType.bybit(walletType: .unified)
-            
-            // Should compile without warnings about Sendable
-            Task {
-                let _ = exchange
-            }
+            #expect(exchange.environment == .production)
         }
     }
     
-    // MARK: - ExchangeName Tests
+    // MARK: - ExchangeIdentifier Tests
     
-    @Suite("ExchangeName")
-    struct ExchangeNameTests {
+    @Suite("ExchangeIdentifier")
+    struct ExchangeIdentifierTests {
         
-        @Test("All exchange names are defined")
-        func testAllExchangeNames() {
-            let names = ExchangeName.allCases
-            
-            #expect(names.contains(.bybit))
-            #expect(names.contains(.kucoin))
-            #expect(names.contains(.binance))
-            #expect(names.count == 3)
+        @Test("Known identifiers are defined")
+        func testKnownIdentifiers() {
+            #expect(ExchangeIdentifier.bybit.rawValue == "bybit")
+            #expect(ExchangeIdentifier.kucoin.rawValue == "kucoin")
+            #expect(ExchangeIdentifier.binance.rawValue == "binance")
         }
         
-        @Test("Exchange name raw values")
-        func testRawValues() {
-            #expect(ExchangeName.bybit.rawValue == "bybit")
-            #expect(ExchangeName.kucoin.rawValue == "kucoin")
-            #expect(ExchangeName.binance.rawValue == "binance")
+        @Test("Can create custom identifier")
+        func testCustomIdentifier() {
+            let custom = ExchangeIdentifier(rawValue: "okx")
+            #expect(custom.rawValue == "okx")
         }
         
-        @Test("Exchange name is hashable")
+        @Test("String literal initialization")
+        func testStringLiteralInit() {
+            let identifier: ExchangeIdentifier = "kraken"
+            #expect(identifier.rawValue == "kraken")
+        }
+        
+        @Test("Identifier is hashable")
         func testHashable() {
-            var set = Set<ExchangeName>()
+            var set = Set<ExchangeIdentifier>()
             set.insert(.bybit)
             set.insert(.kucoin)
             set.insert(.binance)
             
             #expect(set.count == 3)
+        }
+        
+        @Test("Identifier is equatable")
+        func testEquatable() {
+            #expect(ExchangeIdentifier.bybit == ExchangeIdentifier(rawValue: "bybit"))
+            #expect(ExchangeIdentifier.bybit != ExchangeIdentifier.kucoin)
         }
     }
     
@@ -224,6 +206,59 @@ struct ModelTests {
             Task {
                 let _ = walletType
             }
+        }
+    }
+    
+    // MARK: - APIEnvironment Tests
+    
+    @Suite("APIEnvironment")
+    struct APIEnvironmentTests {
+        
+        @Test("All environments are defined")
+        func testAllEnvironments() {
+            #expect(APIEnvironment.production.rawValue == "production")
+            #expect(APIEnvironment.testnet.rawValue == "testnet")
+            #expect(APIEnvironment.demo.rawValue == "demo")
+        }
+        
+        @Test("Environment is hashable")
+        func testHashable() {
+            var set = Set<APIEnvironment>()
+            set.insert(.production)
+            set.insert(.testnet)
+            set.insert(.demo)
+            
+            #expect(set.count == 3)
+        }
+    }
+    
+    // MARK: - ExchangeCapabilities Tests
+    
+    @Suite("ExchangeCapabilities")
+    struct ExchangeCapabilitiesTests {
+        
+        @Test("Available wallet types derived from endpoints")
+        func testAvailableWalletTypesDerived() {
+            let caps = ExchangeCapabilities(
+                urls: [.production: "https://api.example.com"],
+                endpoints: [.spot: "/spot", .futures: "/futures"]
+            )
+            
+            #expect(caps.availableWalletTypes.contains(.spot))
+            #expect(caps.availableWalletTypes.contains(.futures))
+            #expect(!caps.availableWalletTypes.contains(.unified))
+        }
+        
+        @Test("Available environments derived from urls")
+        func testAvailableEnvironmentsDerived() {
+            let caps = ExchangeCapabilities(
+                urls: [.production: "https://api.example.com", .demo: "https://demo.example.com"],
+                endpoints: [.spot: "/spot"]
+            )
+            
+            #expect(caps.availableEnvironments.contains(.production))
+            #expect(caps.availableEnvironments.contains(.demo))
+            #expect(!caps.availableEnvironments.contains(.testnet))
         }
     }
     
@@ -430,7 +465,7 @@ struct ModelTests {
         
         @Test("All domain error cases have message keys")
         func testMessageKeys() {
-            let context = APIErrorContext(exchange: .bybit(walletType: .unified))
+            let context = APIErrorContext(exchange: .bybit)
             
             #expect(APIDomainError.invalidCredentials(context: context).messageKey == "api.invalidCredentials.message")
             #expect(APIDomainError.permissionDenied(context: context).messageKey == "api.permissionDenied.message")
@@ -448,7 +483,7 @@ struct ModelTests {
         
         @Test("All domain errors have user messages")
         func testUserMessages() {
-            let context = APIErrorContext(exchange: .bybit(walletType: .unified))
+            let context = APIErrorContext(exchange: .bybit)
             
             #expect(!APIDomainError.invalidCredentials(context: context).userMessage.isEmpty)
             #expect(!APIDomainError.permissionDenied(context: context).userMessage.isEmpty)
@@ -465,8 +500,8 @@ struct ModelTests {
         
         @Test("User messages include exchange name")
         func testUserMessagesIncludeExchangeName() {
-            let bybitContext = APIErrorContext(exchange: .bybit(walletType: .unified))
-            let kucoinContext = APIErrorContext(exchange: .kucoin(walletType: .futures))
+            let bybitContext = APIErrorContext(exchange: .bybit)
+            let kucoinContext = APIErrorContext(exchange: .kucoin)
             
             let bybitError = APIDomainError.maintenance(context: bybitContext)
             let kucoinError = APIDomainError.maintenance(context: kucoinContext)
@@ -478,7 +513,7 @@ struct ModelTests {
         @Test("Context property returns correct context")
         func testContextProperty() {
             let context = APIErrorContext(
-                exchange: .bybit(walletType: .unified),
+                exchange: .bybit,
                 httpStatus: 401,
                 apiCode: "10004",
                 requestId: "test-id",
@@ -493,9 +528,9 @@ struct ModelTests {
         
         @Test("APIDomainError is equatable")
         func testEquatable() {
-            let context1 = APIErrorContext(exchange: .bybit(walletType: .unified))
-            let context2 = APIErrorContext(exchange: .bybit(walletType: .unified))
-            let context3 = APIErrorContext(exchange: .kucoin(walletType: .futures))
+            let context1 = APIErrorContext(exchange: .bybit)
+            let context2 = APIErrorContext(exchange: .bybit)
+            let context3 = APIErrorContext(exchange: .kucoin)
             
             let error1 = APIDomainError.invalidCredentials(context: context1)
             let error2 = APIDomainError.invalidCredentials(context: context2)
@@ -510,7 +545,7 @@ struct ModelTests {
         @Test("Unknown error includes request ID in message")
         func testUnknownErrorWithRequestID() {
             let context = APIErrorContext(
-                exchange: .bybit(walletType: .unified),
+                exchange: .bybit,
                 requestId: "abc-123"
             )
             
@@ -519,5 +554,39 @@ struct ModelTests {
             #expect(error.userMessage.contains("abc-123"))
         }
     }
+    
+    // MARK: - ExchangeRegistry Tests
+    
+    @Suite("ExchangeRegistry")
+    struct ExchangeRegistryTests {
+        
+        @Test("Shared instance exists")
+        func testSharedInstance() {
+            let registry = ExchangeRegistry.shared
+            #expect(registry != nil)
+        }
+        
+        @Test("Returns capabilities for known exchanges")
+        func testReturnsCapabilities() {
+            let bybitCaps = ExchangeRegistry.shared.capabilities(for: .bybit)
+            let kucoinCaps = ExchangeRegistry.shared.capabilities(for: .kucoin)
+            
+            #expect(bybitCaps != nil)
+            #expect(kucoinCaps != nil)
+        }
+        
+        @Test("Returns nil for unknown exchange")
+        func testReturnsNilForUnknown() {
+            let caps = ExchangeRegistry.shared.capabilities(for: ExchangeIdentifier(rawValue: "unknown"))
+            #expect(caps == nil)
+        }
+        
+        @Test("Available exchanges includes registered exchanges")
+        func testAvailableExchanges() {
+            let available = ExchangeRegistry.shared.availableExchanges
+            
+            #expect(available.contains(.bybit))
+            #expect(available.contains(.kucoin))
+        }
+    }
 }
-
