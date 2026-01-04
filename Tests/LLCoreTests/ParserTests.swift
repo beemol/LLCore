@@ -305,42 +305,48 @@ struct ParserTests {
         
         @Test("Creates Bybit unified parser")
         func testCreatesBybitUnifiedParser() {
-            let parser = WalletDataParserFactory.parser(for: .bybit(walletType: .unified))
+            let exchange = Exchange(.bybit, wallet: .unified)
+            let parser = WalletDataParserFactory.parser(for: exchange)
             
             #expect(parser is BybitUnifiedWalletDataParser)
         }
         
         @Test("Creates Bybit spot parser")
         func testCreatesBybitSpotParser() {
-            let parser = WalletDataParserFactory.parser(for: .bybit(walletType: .spot))
+            let exchange = Exchange(.bybit, wallet: .spot)
+            let parser = WalletDataParserFactory.parser(for: exchange)
             
             #expect(parser is BybitSpotWalletDataParser)
         }
         
         @Test("Creates Bybit futures parser (uses unified)")
         func testCreatesBybitFuturesParser() {
-            let parser = WalletDataParserFactory.parser(for: .bybit(walletType: .futures))
+            let exchange = Exchange(.bybit, wallet: .futures)
+            let parser = WalletDataParserFactory.parser(for: exchange)
             
             #expect(parser is BybitUnifiedWalletDataParser)
         }
         
         @Test("Creates KuCoin futures parser")
         func testCreatesKuCoinFuturesParser() {
-            let parser = WalletDataParserFactory.parser(for: .kucoin(walletType: .futures))
+            let exchange = Exchange(.kucoin, wallet: .futures)
+            let parser = WalletDataParserFactory.parser(for: exchange)
             
             #expect(parser is KuCoinWalletDataParser)
         }
         
         @Test("Creates KuCoin spot parser")
         func testCreatesKuCoinSpotParser() {
-            let parser = WalletDataParserFactory.parser(for: .kucoin(walletType: .spot))
+            let exchange = Exchange(.kucoin, wallet: .spot)
+            let parser = WalletDataParserFactory.parser(for: exchange)
             
             #expect(parser is KuCoinWalletDataParser)
         }
         
         @Test("Creates Binance parser")
         func testCreatesBinanceParser() {
-            let parser = WalletDataParserFactory.parser(for: .binance(walletType: .futures))
+            let exchange = Exchange(.binance, wallet: .futures)
+            let parser = WalletDataParserFactory.parser(for: exchange)
             
             #expect(parser is BinanceWalletDataParser)
         }
@@ -405,4 +411,3 @@ struct ParserTests {
         }
     }
 }
-
