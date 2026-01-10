@@ -8,8 +8,6 @@
 import Foundation
 import LLApiService
 
-public protocol ApiRequestable: ExchangeType {}
-
 public protocol CredentialManagerProtocol: Actor {
     func getCredentials(forAccount account: String) async throws -> Credentials
     func saveCredentials(key: String, secret: String, passphrase: String, forAccount account: String) async -> OSStatus
@@ -27,8 +25,8 @@ public extension APIRequestBuilder {
 }
 
 @MainActor
-public struct APIRequestBuilderFactory {
-    public static func builder(for exchangeType: ExchangeType, creds: CredentialManagerProtocol) async -> APIRequestBuilder? {
+struct APIRequestBuilderFactory {
+    static func builder(for exchangeType: ExchangeType, creds: CredentialManagerProtocol) async -> APIRequestBuilder? {
         let accountName = exchangeType.identifier
 
         guard let credentials = try? await creds.getCredentials(forAccount: accountName.rawValue) else { return nil }
@@ -48,15 +46,15 @@ public struct APIRequestBuilderFactory {
 
 // MARK: concrete implementations
 struct BybitAPIRequestBuilder: APIRequestBuilder {
-    public let exchangeType: ExchangeType
-    public let creds: Credentials
+    let exchangeType: ExchangeType
+    let creds: Credentials
     
-    public init(exchangeType: ExchangeType, creds: Credentials) {
+    init(exchangeType: ExchangeType, creds: Credentials) {
         self.exchangeType = exchangeType
         self.creds = creds
     }
     
-    public func createWalletBalanceRequest() -> URLRequest? {
+    func createWalletBalanceRequest() -> URLRequest? {
         // Use endpoint as-is; it already contains the accountType query for spot/unified
         let urlString = exchangeType.baseURL + exchangeType.endpoint
         guard let url = URL(string: urlString) else { return nil }
@@ -79,16 +77,16 @@ struct BybitAPIRequestBuilder: APIRequestBuilder {
 }
 
 struct KuCoinAPIRequestBuilder: APIRequestBuilder {
-    public let exchangeType: ExchangeType
-    public let creds: Credentials
-    public let apiVersion: String = "3"
+    let exchangeType: ExchangeType
+    let creds: Credentials
+    let apiVersion: String = "3"
     
-    public init(exchangeType: ExchangeType, creds: Credentials) {
+    init(exchangeType: ExchangeType, creds: Credentials) {
         self.exchangeType = exchangeType
         self.creds = creds
     }
     
-    public func createWalletBalanceRequest() -> URLRequest? {
+    func createWalletBalanceRequest() -> URLRequest? {
         let urlString = exchangeType.baseURL + exchangeType.endpoint
         guard let url = URL(string: urlString) else { return nil }
         let timestamp = String(Int(Date().timeIntervalSince1970 * 1000))
@@ -129,15 +127,15 @@ struct KuCoinAPIRequestBuilder: APIRequestBuilder {
 }
 
 struct BinanceAPIRequestBuilder: APIRequestBuilder {
-    public let exchangeType: ExchangeType
-    public let creds: Credentials
+    let exchangeType: ExchangeType
+    let creds: Credentials
     
-    public init(exchangeType: ExchangeType, creds: Credentials) {
+    init(exchangeType: ExchangeType, creds: Credentials) {
         self.exchangeType = exchangeType
         self.creds = creds
     }
     
-    public func createWalletBalanceRequest() -> URLRequest? {
+    func createWalletBalanceRequest() -> URLRequest? {
         // Binance USDT-M Futures account (equity) endpoint
         // GET /fapi/v2/account with signed query: timestamp & optional recvWindow
         let timestamp = String(Int(Date().timeIntervalSince1970 * 1000))
