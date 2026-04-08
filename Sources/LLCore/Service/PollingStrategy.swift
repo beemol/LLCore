@@ -42,14 +42,14 @@ final public class PollingStrategy<Output> {
         self.errorHandler = errorHandler
     }
     
-    public func start() {
+    @available(macOS 13.0, iOS 16.0, *)
+    public func start<C: Clock>(clock: C = ContinuousClock()) where C.Duration == Duration {
         stop()
         
         pollingTask = Task {
             while !Task.isCancelled && shouldContinue() {
-                // Use configurable update frequency (convert seconds to nanoseconds)
-                let nanoseconds = UInt64(getFrequency() * 1_000_000_000.0)
-                try? await Task.sleep(nanoseconds: nanoseconds)
+
+                try? await clock.sleep(for: .seconds(getFrequency()))
                 
                 // Check cancellation AND connection status immediately before API call
                 // This eliminates the race condition
@@ -75,8 +75,7 @@ final public class PollingStrategy<Output> {
                     reconnectionDelay *= 2
                     
                     // Wait with exponential backoff before next attempt
-                    let backoffNanos = UInt64(reconnectionDelay * 1_000_000_000.0)
-                    try? await Task.sleep(nanoseconds: backoffNanos)
+                    try? await clock.sleep(for: .seconds(reconnectionDelay))
                 }
             }
         }
