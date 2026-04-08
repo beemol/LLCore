@@ -24,7 +24,8 @@ let package = Package(
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
             name: "LLCore",
-            dependencies: [.product(name: "LLApiService", package: "LLApiService")]
+            dependencies: [.product(name: "LLApiService", package: "LLApiService")],
+            swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .testTarget(
             name: "LLCoreTests",
