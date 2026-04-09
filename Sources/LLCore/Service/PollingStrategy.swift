@@ -48,14 +48,6 @@ final public class PollingStrategy<Output> {
         
         pollingTask = Task {
             while !Task.isCancelled && shouldContinue() {
-
-                try? await clock.sleep(for: .seconds(getFrequency()))
-                
-                // Check cancellation AND connection status immediately before API call
-                // This eliminates the race condition
-                guard !Task.isCancelled && shouldContinue() else {
-                    break
-                }
                 
                 do {
                     let data = try await fetchHandler()
@@ -64,6 +56,10 @@ final public class PollingStrategy<Output> {
                     // reset reconnection state
                     reconnectionAttempts = 0
                     reconnectionDelay = 1.0
+                    
+                    // wait before making another API call
+                    try? await clock.sleep(for: .seconds(getFrequency()))
+
                 } catch {
                     errorHandler(error)
                     
