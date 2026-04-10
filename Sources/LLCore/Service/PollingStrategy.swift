@@ -61,6 +61,8 @@ final public class PollingStrategy<Output> {
                     try? await clock.sleep(for: .seconds(getFrequency()))
 
                 } catch {
+                    guard !(error is CancellationError) else { return }
+                    
                     errorHandler(error)
                     
                     guard reconnectionAttempts < maxReconnectionAttempts else {
