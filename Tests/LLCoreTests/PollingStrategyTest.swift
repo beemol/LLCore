@@ -22,21 +22,20 @@ struct PollingStrategyTest {
         shouldContinue: shouldContinue,
         fetchHandler: fetchHandler,
         updateHandler: updateHandler,
-        errorHandler: { _ in })
+        errorHandler: errorHandler )
     
 
     var frequency: () -> Double = { return 1.0 }
     var shouldContinue: () -> Bool = { true }
     var fetchHandler: () async throws -> Double = { return 1.0 }
     var updateHandler: (Double) -> Void = { _ in }
-    //public typealias ErrorHandler = (Error) -> Void
+    var errorHandler: (Error) -> Void = { _ in }
 
     @Test("Tests if there is any delay before the first API call. It should be none.")
     mutating func testInitialDelay() async throws {
         
         let shouldProceed: BoolRef = BoolRef(true)
         
-        self.frequency = { return 1 }
         self.shouldContinue = { shouldProceed.value }
         
         let clock = ContinuousClock()
@@ -54,6 +53,48 @@ struct PollingStrategyTest {
             self.pollingStrategy.start()
         }
 
+    }
+    
+    @Test("Test inflight cancellation")
+    mutating func testInFlightCancellation() async throws {
+        
+        self.frequency = { return 3 }
+        let clock = ContinuousClock()
+        
+        errorHandler = { error in
+            // we should not receive a CancellationError
+            #expect(!(error is CancellationError))
+        }
+        
+        await withCheckedContinuation { continuation in
+            
+            self.fetchHandler = {
+                // Simulate a long-running network request
+                do {
+                    try await clock.sleep(for: .seconds(2))
+                    Issue.record("This part of the code should not be reached")
+                    continuation.resume()
+                }
+                catch {
+                    continuation.resume()
+                    throw error
+                    
+                }
+                
+                return 1.0
+            }
+            
+            let strategy = self.pollingStrategy // Capture the strategy
+            strategy.start()
+            
+            // Use Task to handle async work
+            Task {
+                // Give the network request time to start
+                try? await Task.sleep(for: .milliseconds(100))
+                strategy.stop() // Use captured strategy
+            }
+
+        }
     }
 
 }
