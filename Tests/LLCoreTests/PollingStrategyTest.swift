@@ -59,26 +59,28 @@ struct PollingStrategyTest {
     mutating func testInFlightCancellation() async throws {
         
         self.frequency = { return 3 }
-        let clock = ContinuousClock()
+        let updateWasCalled = BoolRef(false)
         
         errorHandler = { error in
             // we should not receive a CancellationError
             #expect(!(error is CancellationError))
         }
         
+        updateHandler = { _ in
+            updateWasCalled.value = true
+        }
+        
         await withCheckedContinuation { continuation in
             
             self.fetchHandler = {
-                // Simulate a long-running network request
-                do {
-                    try await clock.sleep(for: .seconds(2))
-                    Issue.record("This part of the code should not be reached")
-                    continuation.resume()
-                }
-                catch {
-                    continuation.resume()
-                    throw error
-                    
+                // Simulate a long-running network request that completes successfully
+                // but doesn't have built-in cancellation checkpoints
+                await withCheckedContinuation { fetchContinuation in
+                    Task {
+                        // Give time for cancellation to happen
+                        try? await Task.sleep(for: .milliseconds(200))
+                        fetchContinuation.resume() // Complete successfully regardless of cancellation
+                    }
                 }
                 
                 return 1.0
@@ -91,7 +93,16 @@ struct PollingStrategyTest {
             Task {
                 // Give the network request time to start
                 try? await Task.sleep(for: .milliseconds(100))
-                strategy.stop() // Use captured strategy
+                strategy.stop() // Cancel the polling strategy
+                
+                // Give some time for processing to potentially complete
+                try? await Task.sleep(for: .milliseconds(300))
+                
+                // Without proper cancellation handling in PollingStrategy,
+                // updateHandler would be called even after stop()
+                #expect(!updateWasCalled.value, "updateHandler should not be called after cancellation")
+                
+                continuation.resume()
             }
 
         }
