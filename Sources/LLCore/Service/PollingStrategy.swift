@@ -51,6 +51,11 @@ final public class PollingStrategy<Output> {
                 
                 do {
                     let data = try await fetchHandler()
+                    
+                    // cancel any inFlight API calls
+                    // fetchHandler method (or mock in tests) needs to have a suspenssion point for cooperative cancellation to work
+                    try Task.checkCancellation()
+                    
                     updateHandler(data)
 
                     // reset reconnection state
@@ -59,9 +64,10 @@ final public class PollingStrategy<Output> {
                     
                     // wait before making another API call
                     try? await clock.sleep(for: .seconds(getFrequency()))
-
                 } catch {
-                    guard !(error is CancellationError) else { return }
+                    if error is CancellationError {
+                        return
+                    }
                     
                     errorHandler(error)
                     
