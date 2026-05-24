@@ -7,22 +7,39 @@
 
 import Foundation
 
+public enum PollingStrategyAction {
+    case continuePolling       // Keep retrying (for API errors)
+    case stopPolling           // Stop polling (for network errors)
+}
+
+public struct PollingConfiguration: Sendable {
+    let maxReconnectionAttempts: Int
+    let initialRetryDelay: Double
+    
+    public static let `default` = PollingConfiguration(
+        maxReconnectionAttempts: 5,
+        initialRetryDelay: 1.0
+    )
+    
+    public static let fastRetry = PollingConfiguration(
+        maxReconnectionAttempts: 5,
+        initialRetryDelay: 0.01
+    )
+}
+
 @MainActor
 final public class PollingStrategy<Output> {
     public typealias FrequencyProvider = () -> Double
     public typealias FetchHandler = () async throws -> Output
     public typealias UpdateHandler = (Output) -> Void
-    public typealias ErrorHandler = (Error) -> Void
+    public typealias ErrorHandler = (Error) -> PollingStrategyAction
     
     private let getFrequency: FrequencyProvider
     private let fetchHandler: FetchHandler
     private let updateHandler: UpdateHandler
     private let errorHandler: ErrorHandler
-
-    // reconnection controls
-    private var reconnectionAttempts = 0
-    private var maxReconnectionAttempts = 5
-    private var reconnectionDelay: Double = 1.0
+    
+    private var config: PollingConfiguration
     
     // query closure to check if connection is in proper state (i.e. .connected)
     private let shouldContinue: () -> Bool
@@ -33,18 +50,23 @@ final public class PollingStrategy<Output> {
          shouldContinue: @escaping () -> Bool,
          fetchHandler: @escaping FetchHandler,
          updateHandler: @escaping UpdateHandler,
-         errorHandler: @escaping ErrorHandler)
+         errorHandler: @escaping ErrorHandler,
+         config: PollingConfiguration = .default)
     {
         self.getFrequency = frequencyProvider
         self.shouldContinue = shouldContinue
         self.fetchHandler = fetchHandler
         self.updateHandler = updateHandler
         self.errorHandler = errorHandler
+        
+        self.config = config
     }
     
     @available(macOS 13.0, iOS 16.0, *)
     public func start<C: Clock>(clock: C = ContinuousClock()) where C.Duration == Duration {
-        stop()
+        
+        var reconnectionAttempts = 0
+        var currentDelay = config.initialRetryDelay
         
         pollingTask = Task {
             while !Task.isCancelled && shouldContinue() {
@@ -60,26 +82,39 @@ final public class PollingStrategy<Output> {
 
                     // reset reconnection state
                     reconnectionAttempts = 0
-                    reconnectionDelay = 1.0
+                    
                     
                     // wait before making another API call
                     try? await clock.sleep(for: .seconds(getFrequency()))
                 } catch {
+                    print("[PollingStrategy] attempts: \(reconnectionAttempts) | maxAttempts: \(config.maxReconnectionAttempts) error: \(errorHandler(error))")
                     if error is CancellationError {
                         return
                     }
                     
-                    errorHandler(error)
+                    if errorHandler(error) == .stopPolling {
+                        stop()
+                        return
+                    }
                     
-                    guard reconnectionAttempts < maxReconnectionAttempts else {
+                    guard reconnectionAttempts < config.maxReconnectionAttempts else {
                         // Max attempts reached, stop polling
+                        // also we need to inform client that we stoped polling
+                        
+                        let nError = APIDomainError.unknown(context: APIErrorContext(exchange: .bybit,
+                                                                                httpStatus: nil,
+                                                                                rawMessage: "Max attempts reached. Give up."))
+                        errorHandler(nError)
+                        
+                        stop()
+                        
                         break
                     }
                     reconnectionAttempts += 1
-                    reconnectionDelay *= 2
+                    currentDelay *= 2
                     
                     // Wait with exponential backoff before next attempt
-                    try? await clock.sleep(for: .seconds(reconnectionDelay))
+                    try? await clock.sleep(for: .seconds(currentDelay))
                 }
             }
         }
