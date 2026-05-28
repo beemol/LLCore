@@ -15,7 +15,7 @@ import SwiftUI
 
 /// Wallet data model - only created when data is valid
 /// If parsing fails, parsers return nil instead of creating invalid WalletData
-public struct WalletData {
+public struct WalletData: Sendable {
     /// Total equity value (in currency units, e.g., USDT)
     public let totalEquity: Double
     /// Wallet balance (in currency units, e.g., USDT)
