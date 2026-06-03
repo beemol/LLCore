@@ -87,8 +87,8 @@ final public class PollingStrategy<Output> {
                     // wait before making another API call
                     try? await clock.sleep(for: .seconds(getFrequency()))
                 } catch {
-                    print("[PollingStrategy] attempts: \(reconnectionAttempts) | maxAttempts: \(config.maxReconnectionAttempts) error: \(errorHandler(error))")
                     if error is CancellationError {
+                        print("[PollingStrategy] Cancelled")
                         return
                     }
                     
@@ -104,7 +104,7 @@ final public class PollingStrategy<Output> {
                         let nError = APIDomainError.unknown(context: APIErrorContext(exchange: .bybit,
                                                                                 httpStatus: nil,
                                                                                 rawMessage: "Max attempts reached. Give up."))
-                        errorHandler(nError)
+                        _ = errorHandler(nError)
                         
                         stop()
                         

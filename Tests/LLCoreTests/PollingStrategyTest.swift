@@ -29,7 +29,7 @@ struct PollingStrategyTest {
     var shouldContinue: () -> Bool = { true }
     var fetchHandler: () async throws -> Double = { return 1.0 }
     var updateHandler: (Double) -> Void = { _ in }
-    var errorHandler: (Error) -> Void = { _ in }
+    var errorHandler: (Error) -> PollingStrategyAction = { _ in return .stopPolling }
 
     @Test("Tests if there is any delay before the first API call. It should be none.")
     mutating func testInitialDelay() async throws {
@@ -64,6 +64,7 @@ struct PollingStrategyTest {
         errorHandler = { error in
             // we should not receive a CancellationError
             #expect(!(error is CancellationError))
+            return PollingStrategyAction.stopPolling
         }
         
         updateHandler = { _ in

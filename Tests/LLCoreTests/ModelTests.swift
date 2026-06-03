@@ -241,7 +241,7 @@ struct ModelTests {
         func testAvailableWalletTypesDerived() {
             let caps = ExchangeCapabilities(
                 urls: [.production: "https://api.example.com"],
-                endpoints: [.spot: "/spot", .futures: "/futures"]
+                endpoints: [.wallet(.spot): "/spot", .wallet(.futures): "/futures"]
             )
             
             #expect(caps.availableWalletTypes.contains(.spot))
@@ -253,7 +253,7 @@ struct ModelTests {
         func testAvailableEnvironmentsDerived() {
             let caps = ExchangeCapabilities(
                 urls: [.production: "https://api.example.com", .demo: "https://demo.example.com"],
-                endpoints: [.spot: "/spot"]
+                endpoints: [.wallet(.spot): "/spot"]
             )
             
             #expect(caps.availableEnvironments.contains(.production))

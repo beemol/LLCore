@@ -13,7 +13,11 @@ public protocol ExchangeRegistryProtocol: Sendable {
     
     func capabilities(for identifier: ExchangeIdentifier) -> ExchangeCapabilities?
     
+    @available(*, deprecated, message: "Use parser(for:endpointType:) instead")
     func parser(for identifier: ExchangeIdentifier, walletType: WalletType) -> (any WalletDataParserProtocol)?
+    
+    func parser(for identifier: ExchangeIdentifier, endpointType: EndpointType) -> (any LLResponseParserProtocol)?
+    
     func errorDetector(for identifier: ExchangeIdentifier) -> LLDomainErrorDetector?
     func requestBuilder(for config: any ExchangeType, credentials: Credentials) -> APIRequestBuilder?
     
@@ -25,7 +29,7 @@ public protocol ExchangeRegistryProtocol: Sendable {
     
     func setCapabilities(_ caps: ExchangeCapabilities, for identifier: ExchangeIdentifier)
     
-    func registerParserFactory(_ factory: @escaping (WalletType) -> any WalletDataParserProtocol, for identifier: ExchangeIdentifier)
+    func registerParserFactory(_ factory: @escaping (EndpointType) -> any LLResponseParserProtocol, for identifier: ExchangeIdentifier)
     func registerErrorDetector(_ detector: LLDomainErrorDetector, for identifier: ExchangeIdentifier)
     func registerRequestBuilderFactory(_ factory: @escaping (any ExchangeType, Credentials) -> APIRequestBuilder, for identifier: ExchangeIdentifier)
 }
@@ -41,7 +45,10 @@ public final class ExchangeRegistry: ExchangeRegistryProtocol, @unchecked Sendab
     
     private var capabilities: [ExchangeIdentifier: ExchangeCapabilities] = [:]
 
-    private var parserFactories: [ExchangeIdentifier: (WalletType) -> any WalletDataParserProtocol] = [:]
+    //private var parserFactories: [ExchangeIdentifier: (WalletType) -> any WalletDataParserProtocol] = [:]
+    
+    private var parserFactories: [ExchangeIdentifier: (EndpointType) -> any LLResponseParserProtocol] = [:]
+    
     private var errorDetectors: [ExchangeIdentifier: LLDomainErrorDetector] = [:]
     private var requestBuilderFactories: [ExchangeIdentifier: (any ExchangeType, Credentials) -> APIRequestBuilder] = [:]
     
@@ -63,8 +70,13 @@ public final class ExchangeRegistry: ExchangeRegistryProtocol, @unchecked Sendab
         capabilities[identifier]
     }
     
+    @available(*, deprecated, message: "Use parser(for:endpointType:) instead")
     public func parser(for identifier: ExchangeIdentifier, walletType: WalletType) -> (any WalletDataParserProtocol)? {
-        parserFactories[identifier]?(walletType)
+        return parserFactories[identifier]?(.wallet(walletType)) as? any WalletDataParserProtocol
+    }
+    
+    public func parser(for identifier: ExchangeIdentifier, endpointType: EndpointType) -> (any LLResponseParserProtocol)? {
+        parserFactories[identifier]?(endpointType)
     }
     
     public func errorDetector(for identifier: ExchangeIdentifier) -> LLDomainErrorDetector? {
@@ -81,7 +93,8 @@ public final class ExchangeRegistry: ExchangeRegistryProtocol, @unchecked Sendab
     }
 
     public func addOrUpdateWalletType(with endpoint: String, for identifier: ExchangeIdentifier, walletType: WalletType) {
-        capabilities[identifier]?.endpoints[walletType] = endpoint
+        capabilities[identifier]?.endpoints[.wallet(walletType)] = endpoint
+        //capabilities[identifier]?.walletEndpoints[walletType] = endpoint
     }
     
     public func removeEnvironment(_ environment: APIEnvironment, for identifier: ExchangeIdentifier) {
@@ -89,14 +102,15 @@ public final class ExchangeRegistry: ExchangeRegistryProtocol, @unchecked Sendab
     }
 
     public func removeWalletType(_ walletType: WalletType, for identifier: ExchangeIdentifier) {
-        capabilities[identifier]?.endpoints.removeValue(forKey: walletType)
+        capabilities[identifier]?.endpoints.removeValue(forKey: .wallet(walletType))
+        //capabilities[identifier]?.walletEndpoints.removeValue(forKey: walletType)
     }
     
     public func setCapabilities(_ caps: ExchangeCapabilities, for identifier: ExchangeIdentifier) {
         capabilities[identifier] = caps
     }
     
-    public func registerParserFactory(_ factory: @escaping (WalletType) -> any WalletDataParserProtocol, for identifier: ExchangeIdentifier) {
+    public func registerParserFactory(_ factory: @escaping (EndpointType) -> any LLResponseParserProtocol, for identifier: ExchangeIdentifier) {
         parserFactories[identifier] = factory
     }
     
@@ -112,8 +126,14 @@ public final class ExchangeRegistry: ExchangeRegistryProtocol, @unchecked Sendab
     private func registerBybitDefaults() {
         capabilities[.bybit] = defaultCapabilitiesForBybit()
         
-        registerParserFactory({ walletType in
-            BybitUnifiedWalletDataParser()
+        registerParserFactory({ endpointType in
+            switch endpointType {
+            case .wallet(_):
+                return BybitUnifiedWalletDataParser()
+            case .apiKeyInfo:
+                // TODO: Create BybitApiKeyInfoParser
+                return BybitUnifiedWalletDataParser() // temporary fallback
+            }
         }, for: .bybit)
         
         registerErrorDetector(BybitErrorDetector(), for: .bybit)
@@ -126,8 +146,14 @@ public final class ExchangeRegistry: ExchangeRegistryProtocol, @unchecked Sendab
     private func registerKuCoinDefaults() {
         capabilities[.kucoin] = defaultCapabilitiesForKucoin()
         
-        registerParserFactory({ walletType in
-            KuCoinWalletDataParser(walletType: walletType)
+        registerParserFactory({ endpointType in
+            switch endpointType {
+            case .wallet(let walletType):
+                return KuCoinWalletDataParser(walletType: walletType)
+            case .apiKeyInfo:
+                // TODO:
+                return KuCoinWalletDataParser() // temporary fallback
+            }
         }, for: .kucoin)
         
         registerErrorDetector(KucoinErrorDetector(), for: .kucoin)
@@ -145,10 +171,16 @@ public final class ExchangeRegistry: ExchangeRegistryProtocol, @unchecked Sendab
                 .testnet: "https://api-testnet.bybit.com",
                 .demo: "https://api-demo.bybit.com"
             ],
+//            walletEndpoints: [
+//                .unified: "/v5/account/wallet-balance?accountType=UNIFIED",
+//                .spot: "/v5/account/wallet-balance?accountType=SPOT",
+//                .futures: "/v5/account/wallet-balance?accountType=CONTRACT"
+//            ],
             endpoints: [
-                .unified: "/v5/account/wallet-balance?accountType=UNIFIED",
-                .spot: "/v5/account/wallet-balance?accountType=SPOT",
-                .futures: "/v5/account/wallet-balance?accountType=CONTRACT"
+                .wallet(.unified): "/v5/account/wallet-balance?accountType=UNIFIED",
+                .wallet(.spot): "/v5/account/wallet-balance?accountType=SPOT",
+                .wallet(.futures): "/v5/account/wallet-balance?accountType=CONTRACT",
+                .apiKeyInfo: "/v5/user/query-api"
             ]
         )
     }
@@ -160,10 +192,16 @@ public final class ExchangeRegistry: ExchangeRegistryProtocol, @unchecked Sendab
                 .testnet: "https://api-sandbox-futures.kucoin.com",
                 .demo: "https://api-sandbox-futures.kucoin.com"
             ],
+//            walletEndpoints: [
+//                .futures: "/api/v1/account-overview?currency=USDT",
+//                .spot: "/api/v1/accounts?type=main",
+//                .unified: "/api/v1/accounts",
+//            ],
             endpoints: [
-                .futures: "/api/v1/account-overview?currency=USDT",
-                .spot: "/api/v1/accounts?type=main",
-                .unified: "/api/v1/accounts",
+                .wallet(.unified): "/api/v1/accounts",
+                .wallet(.spot): "/api/v1/accounts?type=main",
+                .wallet(.futures): "/api/v1/account-overview?currency=USDT",
+                .apiKeyInfo: "/api/v1/user-info/all-sub-users"
             ]
         )
     }

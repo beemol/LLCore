@@ -56,7 +56,8 @@ struct BybitAPIRequestBuilder: APIRequestBuilder {
     
     func createWalletBalanceRequest() -> URLRequest? {
         // Use endpoint as-is; it already contains the accountType query for spot/unified
-        let urlString = exchangeType.baseURL + exchangeType.endpoint
+        let walletType = exchangeType.walletType
+        let urlString = exchangeType.baseURL + exchangeType.getEndpointString(for: .wallet(walletType))
         guard let url = URL(string: urlString) else { return nil }
         let timestamp = String(Int(Date().timeIntervalSince1970 * 1000))
         let recvWindow = "5000"
@@ -87,11 +88,14 @@ struct KuCoinAPIRequestBuilder: APIRequestBuilder {
     }
     
     func createWalletBalanceRequest() -> URLRequest? {
-        let urlString = exchangeType.baseURL + exchangeType.endpoint
+        let walletType = exchangeType.walletType
+        let endpoint = exchangeType.getEndpointString(for: .wallet(walletType))
+        let urlString = exchangeType.baseURL + endpoint
+        
         guard let url = URL(string: urlString) else { return nil }
         let timestamp = String(Int(Date().timeIntervalSince1970 * 1000))
         let method = "GET"
-        let endpoint = exchangeType.endpoint
+        
         
         // For KuCoin API v3, the signature format is: timestamp + method + endpoint + body
         // For GET requests, body is empty

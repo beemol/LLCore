@@ -34,12 +34,25 @@ public enum WalletType: String, CaseIterable, Hashable, Sendable {
     case unified
 }
 
+public enum EndpointType: Hashable, Sendable {
+    case wallet(WalletType)
+    case apiKeyInfo
+    // Future: accountInfo, orders, positions, etc.
+}
+
 public struct ExchangeCapabilities {
     public var urls: [APIEnvironment: String]
-    public var endpoints: [WalletType: String]
+    
+    public var endpoints: [EndpointType: String]
     
     public var availableWalletTypes: [WalletType] {
-        Array(endpoints.keys)
+        
+        return endpoints.reduce([]) { (result, element) in
+            if case .wallet(let wType) = element.key {
+                return result + [wType]
+            }
+            return result
+        }
     }
     
     public var availableEnvironments: [APIEnvironment] {
@@ -48,7 +61,7 @@ public struct ExchangeCapabilities {
     
     public init(
         urls: [APIEnvironment: String],
-        endpoints: [WalletType: String]
+        endpoints: [EndpointType: String] = [:]
     ) {
         self.urls = urls
         self.endpoints = endpoints
@@ -78,8 +91,13 @@ public struct Exchange: ExchangeType, Equatable, Hashable {
         registry.capabilities(for: identifier)?.urls[environment] ?? ""
     }
     
+    public func getEndpointString(for endpointType: EndpointType) -> String {
+        registry.capabilities(for: identifier)?.endpoints[endpointType] ?? ""
+    }
+    
+    @available(*, deprecated, message: "Use getEndpointString(for endpointType:) instead")
     public var endpoint: String {
-        registry.capabilities(for: identifier)?.endpoints[walletType] ?? ""
+        return getEndpointString(for: .wallet(walletType))
     }
     
     public var availableWalletTypes: [WalletType] {
@@ -116,7 +134,11 @@ public protocol ExchangeType: Sendable {
     var registry: ExchangeRegistryProtocol { get }
     
     var baseURL: String { get }
+    
+    @available(*, deprecated, message: "Use getEndpointString(for endpointType:) instead")
     var endpoint: String { get }
+    
+    func getEndpointString(for endpointType: EndpointType) -> String
 }
 
 public extension ExchangeType {
