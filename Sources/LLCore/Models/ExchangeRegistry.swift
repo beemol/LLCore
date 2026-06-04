@@ -16,7 +16,8 @@ public protocol ExchangeRegistryProtocol: Sendable {
     @available(*, deprecated, message: "Use parser(for:endpointType:) instead")
     func parser(for identifier: ExchangeIdentifier, walletType: WalletType) -> (any WalletDataParserProtocol)?
     
-    func parser(for identifier: ExchangeIdentifier, endpointType: EndpointType) -> (any LLResponseParserProtocol)?
+    @available(macOS 13.0.0, *)
+    func parser<T>(for identifier: ExchangeIdentifier, endpointType: EndpointType) -> (any LLResponseParserProtocol<T>)?
     
     func errorDetector(for identifier: ExchangeIdentifier) -> LLDomainErrorDetector?
     func requestBuilder(for config: any ExchangeType, credentials: Credentials) -> APIRequestBuilder?
@@ -44,8 +45,6 @@ public final class ExchangeRegistry: ExchangeRegistryProtocol, @unchecked Sendab
     public static let shared = ExchangeRegistry()
     
     private var capabilities: [ExchangeIdentifier: ExchangeCapabilities] = [:]
-
-    //private var parserFactories: [ExchangeIdentifier: (WalletType) -> any WalletDataParserProtocol] = [:]
     
     private var parserFactories: [ExchangeIdentifier: (EndpointType) -> any LLResponseParserProtocol] = [:]
     
@@ -75,8 +74,9 @@ public final class ExchangeRegistry: ExchangeRegistryProtocol, @unchecked Sendab
         return parserFactories[identifier]?(.wallet(walletType)) as? any WalletDataParserProtocol
     }
     
-    public func parser(for identifier: ExchangeIdentifier, endpointType: EndpointType) -> (any LLResponseParserProtocol)? {
-        parserFactories[identifier]?(endpointType)
+    @available(macOS 13.0.0, *)
+    public func parser<T>(for identifier: ExchangeIdentifier, endpointType: EndpointType) -> (any LLResponseParserProtocol<T>)? {
+        parserFactories[identifier]?(endpointType) as? any LLResponseParserProtocol<T>
     }
     
     public func errorDetector(for identifier: ExchangeIdentifier) -> LLDomainErrorDetector? {
