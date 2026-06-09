@@ -1,5 +1,5 @@
 {
-  "originHash" : "4f648e2427dbc8c5d1e0e06a2511dcaeb68afd5ca791fe22e9eacdf1822b0f44",
+  "originHash" : "1031d57a32c063be587e153a1c97f919e9883a08702c520552a4bdb67964e3e3",
   "pins" : [
     {
       "identity" : "llapiservice",
@@ -7,7 +7,7 @@
       "location" : "https://github.com/beemol/LLApiService.git",
       "state" : {
         "branch" : "main",
-        "revision" : "1fe2593545532f2fd99aff41b09900bb8524b391"
+        "revision" : "6977d56c0dfe6307fed7d42e923e54188d6cb26b"
       }
     }
   ],

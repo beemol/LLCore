@@ -28,7 +28,7 @@ public struct PollingConfiguration: Sendable {
 }
 
 @MainActor
-final public class PollingStrategy<Output> {
+final public class PollingStrategy<Output: Sendable> {
     public typealias FrequencyProvider = () -> Double
     public typealias FetchHandler = () async throws -> Output
     public typealias UpdateHandler = (Output) -> Void
