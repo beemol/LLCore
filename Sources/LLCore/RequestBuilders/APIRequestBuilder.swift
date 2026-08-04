@@ -15,37 +15,66 @@ public protocol CredentialManagerProtocol: Actor {
 }
 
 public protocol APIRequestBuilder: LLAPIRequestBuilder {
-    func createWalletBalanceRequest() -> URLRequest?
 }
 
-public extension APIRequestBuilder {
+//public extension APIRequestBuilder {
+//    func createRequest() throws -> URLRequest {
+//        return createWalletBalanceRequest() ?? URLRequest(url: URL(string: "")!)
+//    }
+//}
+
+//@MainActor
+//struct APIRequestBuilderFactory {
+//    static func builder(for exchangeType: ExchangeType, creds: CredentialManagerProtocol) async -> APIRequestBuilder? {
+//        let accountName = exchangeType.identifier
+//
+//        guard let credentials = try? await creds.getCredentials(forAccount: accountName.rawValue) else { return nil }
+//
+//        switch accountName {
+//        case .bybit:
+//            return BybitAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
+//        case .kucoin:
+//            return KuCoinAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
+//        case .binance:
+//            return BinanceAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
+//        default:
+//            return BybitAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
+//        }
+//    }
+//}
+
+struct BybitAPIKeyInfoAPIRequestBuilder: APIRequestBuilder {
+    let exchangeType: ExchangeType
+    let creds: Credentials
+    
     func createRequest() throws -> URLRequest {
-        return createWalletBalanceRequest() ?? URLRequest(url: URL(string: "")!)
-    }
-}
-
-@MainActor
-struct APIRequestBuilderFactory {
-    static func builder(for exchangeType: ExchangeType, creds: CredentialManagerProtocol) async -> APIRequestBuilder? {
-        let accountName = exchangeType.identifier
-
-        guard let credentials = try? await creds.getCredentials(forAccount: accountName.rawValue) else { return nil }
-
-        switch accountName {
-        case .bybit:
-            return BybitAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
-        case .kucoin:
-            return KuCoinAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
-        case .binance:
-            return BinanceAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
-        default:
-            return BybitAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
+        // Get the endpoint from your capabilities
+        let urlString = exchangeType.baseURL + exchangeType.getEndpointString(for: .apiKeyInfo)
+        guard let url = URL(string: urlString) else {
+            throw APIError.invalidRequest
         }
+        
+        let timestamp = String(Int(Date().timeIntervalSince1970 * 1000))
+        let recvWindow = "5000"
+        
+        // For API key info endpoint, no query params needed
+        // Signature is: timestamp + apiKey + recvWindow
+        let signaturePayload = timestamp + creds.apiKey + recvWindow
+        let signature = signaturePayload.hmacSHA256(key: creds.apiSecret)
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue(creds.apiKey, forHTTPHeaderField: "X-BAPI-API-KEY")
+        request.setValue(timestamp, forHTTPHeaderField: "X-BAPI-TIMESTAMP")
+        request.setValue(recvWindow, forHTTPHeaderField: "X-BAPI-RECV-WINDOW")
+        request.setValue(signature, forHTTPHeaderField: "X-BAPI-SIGN")
+        
+        return request
     }
 }
 
 // MARK: concrete implementations
-struct BybitAPIRequestBuilder: APIRequestBuilder {
+struct BybitWalletAPIRequestBuilder: APIRequestBuilder {
     let exchangeType: ExchangeType
     let creds: Credentials
     
@@ -54,11 +83,13 @@ struct BybitAPIRequestBuilder: APIRequestBuilder {
         self.creds = creds
     }
     
-    func createWalletBalanceRequest() -> URLRequest? {
+    func createRequest() throws -> URLRequest {
         // Use endpoint as-is; it already contains the accountType query for spot/unified
         let walletType = exchangeType.walletType
         let urlString = exchangeType.baseURL + exchangeType.getEndpointString(for: .wallet(walletType))
-        guard let url = URL(string: urlString) else { return nil }
+        guard let url = URL(string: urlString) else {
+            throw APIError.invalidRequest
+        }
         let timestamp = String(Int(Date().timeIntervalSince1970 * 1000))
         let recvWindow = "5000"
         // Sign with accountType matching selected wallet
@@ -78,6 +109,7 @@ struct BybitAPIRequestBuilder: APIRequestBuilder {
 }
 
 struct KuCoinAPIRequestBuilder: APIRequestBuilder {
+    
     let exchangeType: ExchangeType
     let creds: Credentials
     let apiVersion: String = "3"
@@ -87,12 +119,15 @@ struct KuCoinAPIRequestBuilder: APIRequestBuilder {
         self.creds = creds
     }
     
-    func createWalletBalanceRequest() -> URLRequest? {
+    func createRequest() throws -> URLRequest {
         let walletType = exchangeType.walletType
         let endpoint = exchangeType.getEndpointString(for: .wallet(walletType))
         let urlString = exchangeType.baseURL + endpoint
         
-        guard let url = URL(string: urlString) else { return nil }
+        guard let url = URL(string: urlString) else {
+            throw APIError.invalidRequest
+        }
+        
         let timestamp = String(Int(Date().timeIntervalSince1970 * 1000))
         let method = "GET"
         
@@ -139,7 +174,7 @@ struct BinanceAPIRequestBuilder: APIRequestBuilder {
         self.creds = creds
     }
     
-    func createWalletBalanceRequest() -> URLRequest? {
+    func createRequest() throws -> URLRequest {
         // Binance USDT-M Futures account (equity) endpoint
         // GET /fapi/v2/account with signed query: timestamp & optional recvWindow
         let timestamp = String(Int(Date().timeIntervalSince1970 * 1000))
@@ -149,7 +184,9 @@ struct BinanceAPIRequestBuilder: APIRequestBuilder {
         
         let urlString = "https://testnet.binancefuture.com/fapi/v2/account?\(queryString)&signature=\(signature)"
         //let urlString = "https://fapi.binance.com/fapi/v2/account?\(queryString)&signature=\(signature)"
-        guard let url = URL(string: urlString) else { return nil }
+        guard let url = URL(string: urlString) else {
+            throw APIError.invalidRequest
+        }
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue(creds.apiKey, forHTTPHeaderField: "X-MBX-APIKEY")

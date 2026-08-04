@@ -20,7 +20,7 @@ public protocol ExchangeRegistryProtocol: Sendable {
     func parser<T>(for identifier: ExchangeIdentifier, endpointType: EndpointType) -> (any LLResponseParserProtocol<T>)?
     
     func errorDetector(for identifier: ExchangeIdentifier) -> LLDomainErrorDetector?
-    func requestBuilder(for config: any ExchangeType, credentials: Credentials) -> APIRequestBuilder?
+    func requestBuilder(for config: any ExchangeType, credentials: Credentials, endpointType: EndpointType) -> APIRequestBuilder?
     
     // MARK: - Write (for setup/testing)
     func addOrUpdateEnvironment(with url: String, for identifier: ExchangeIdentifier, environment: APIEnvironment)
@@ -32,7 +32,7 @@ public protocol ExchangeRegistryProtocol: Sendable {
     
     func registerParserFactory(_ factory: @escaping (EndpointType) -> any LLResponseParserProtocol, for identifier: ExchangeIdentifier)
     func registerErrorDetector(_ detector: LLDomainErrorDetector, for identifier: ExchangeIdentifier)
-    func registerRequestBuilderFactory(_ factory: @escaping (any ExchangeType, Credentials) -> APIRequestBuilder, for identifier: ExchangeIdentifier)
+    func registerRequestBuilderFactory(_ factory: @escaping (any ExchangeType, Credentials, EndpointType) -> APIRequestBuilder, for identifier: ExchangeIdentifier)
 }
 
 // TODO: make it an Actor or hanlde safe concurrency (good for now since we don't expose capabilities {get set} )
@@ -49,7 +49,7 @@ public final class ExchangeRegistry: ExchangeRegistryProtocol, @unchecked Sendab
     private var parserFactories: [ExchangeIdentifier: (EndpointType) -> any LLResponseParserProtocol] = [:]
     
     private var errorDetectors: [ExchangeIdentifier: LLDomainErrorDetector] = [:]
-    private var requestBuilderFactories: [ExchangeIdentifier: (any ExchangeType, Credentials) -> APIRequestBuilder] = [:]
+    private var requestBuilderFactories: [ExchangeIdentifier: (any ExchangeType, Credentials, EndpointType) -> APIRequestBuilder] = [:]
     
     private init() {
         // Defaults - can be overridden
@@ -83,8 +83,8 @@ public final class ExchangeRegistry: ExchangeRegistryProtocol, @unchecked Sendab
         errorDetectors[identifier]
     }
     
-    public func requestBuilder(for config: any ExchangeType, credentials: Credentials) -> APIRequestBuilder? {
-        requestBuilderFactories[config.identifier]?(config, credentials)
+    public func requestBuilder(for config: any ExchangeType, credentials: Credentials, endpointType: EndpointType) -> APIRequestBuilder? {
+        requestBuilderFactories[config.identifier]?(config, credentials, endpointType)
     }
     
     // MARK: - Modify API (for client apps)
@@ -118,7 +118,8 @@ public final class ExchangeRegistry: ExchangeRegistryProtocol, @unchecked Sendab
         errorDetectors[identifier] = detector
     }
     
-    public func registerRequestBuilderFactory(_ factory: @escaping (any ExchangeType, Credentials) -> APIRequestBuilder, for identifier: ExchangeIdentifier) {
+    public func registerRequestBuilderFactory(_ factory: @escaping (any ExchangeType, Credentials, EndpointType) -> APIRequestBuilder,
+                                              for identifier: ExchangeIdentifier) {
         requestBuilderFactories[identifier] = factory
     }
     
@@ -131,15 +132,19 @@ public final class ExchangeRegistry: ExchangeRegistryProtocol, @unchecked Sendab
             case .wallet(_):
                 return BybitUnifiedWalletDataParser()
             case .apiKeyInfo:
-                // TODO: Create BybitApiKeyInfoParser
-                return BybitUnifiedWalletDataParser() // temporary fallback
+                return ByBitApiKeyInfoParser()
             }
         }, for: .bybit)
         
         registerErrorDetector(BybitErrorDetector(), for: .bybit)
         
-        registerRequestBuilderFactory({ config, creds in
-            BybitAPIRequestBuilder(exchangeType: config, creds: creds)
+        registerRequestBuilderFactory({ config, creds, endpointType in
+            switch endpointType {
+            case .wallet(_):
+                return BybitWalletAPIRequestBuilder(exchangeType: config, creds: creds)
+            case .apiKeyInfo:
+                return BybitAPIKeyInfoAPIRequestBuilder(exchangeType: config, creds: creds)
+            }
         }, for: .bybit)
     }
     
@@ -158,7 +163,7 @@ public final class ExchangeRegistry: ExchangeRegistryProtocol, @unchecked Sendab
         
         registerErrorDetector(KucoinErrorDetector(), for: .kucoin)
         
-        registerRequestBuilderFactory({ config, creds in
+        registerRequestBuilderFactory({ config, creds, endpointType in
             KuCoinAPIRequestBuilder(exchangeType: config, creds: creds)
         }, for: .kucoin)
     }
