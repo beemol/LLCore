@@ -21,9 +21,9 @@ struct RequestBuilderTests {
         func testUnifiedWalletRequest() {
             let exchange = Exchange(.bybit, wallet: .unified)
             let credentials = TestFixtures.TestCredentials.bybit
-            let builder = BybitAPIRequestBuilder(exchangeType: exchange, creds: credentials)
+            let builder = BybitWalletAPIRequestBuilder(exchangeType: exchange, creds: credentials)
             
-            let request = builder.createWalletBalanceRequest()
+            let request = try? builder.createRequest()
             
             #expect(request != nil)
             #expect(request?.httpMethod == "GET")
@@ -39,9 +39,9 @@ struct RequestBuilderTests {
         func testSpotWalletRequest() {
             let exchange = Exchange(.bybit, wallet: .spot)
             let credentials = TestFixtures.TestCredentials.bybit
-            let builder = BybitAPIRequestBuilder(exchangeType: exchange, creds: credentials)
+            let builder = BybitWalletAPIRequestBuilder(exchangeType: exchange, creds: credentials)
             
-            let request = builder.createWalletBalanceRequest()
+            let request = try? builder.createRequest()
             
             #expect(request != nil)
             #expect(request?.url?.absoluteString.contains("accountType=SPOT") == true)
@@ -51,11 +51,11 @@ struct RequestBuilderTests {
         func testSignatureChangesWithTimestamp() {
             let exchange = Exchange(.bybit, wallet: .unified)
             let credentials = TestFixtures.TestCredentials.bybit
-            let builder = BybitAPIRequestBuilder(exchangeType: exchange, creds: credentials)
+            let builder = BybitWalletAPIRequestBuilder(exchangeType: exchange, creds: credentials)
             
-            let request1 = builder.createWalletBalanceRequest()
+            let request1 = try? builder.createRequest()
             Thread.sleep(forTimeInterval: 0.01) // Small delay to ensure different timestamp
-            let request2 = builder.createWalletBalanceRequest()
+            let request2 = try? builder.createRequest()
             
             let signature1 = request1?.value(forHTTPHeaderField: "X-BAPI-SIGN")
             let signature2 = request2?.value(forHTTPHeaderField: "X-BAPI-SIGN")
@@ -69,9 +69,9 @@ struct RequestBuilderTests {
         func testCorrectBaseURL() {
             let exchange = Exchange(.bybit, wallet: .unified)
             let credentials = TestFixtures.TestCredentials.bybit
-            let builder = BybitAPIRequestBuilder(exchangeType: exchange, creds: credentials)
+            let builder = BybitWalletAPIRequestBuilder(exchangeType: exchange, creds: credentials)
             
-            let request = builder.createWalletBalanceRequest()
+            let request = try? builder.createRequest()
             
             #expect(request?.url?.scheme == "https")
             #expect(request?.url?.host == "api.bybit.com")
@@ -89,7 +89,7 @@ struct RequestBuilderTests {
             let credentials = TestFixtures.TestCredentials.kucoin
             let builder = KuCoinAPIRequestBuilder(exchangeType: exchange, creds: credentials)
             
-            let request = builder.createWalletBalanceRequest()
+            let request = try? builder.createRequest()
             
             #expect(request != nil)
             #expect(request?.httpMethod == "GET")
@@ -107,7 +107,7 @@ struct RequestBuilderTests {
             let credentials = TestFixtures.TestCredentials.kucoin
             let builder = KuCoinAPIRequestBuilder(exchangeType: exchange, creds: credentials)
             
-            let request = builder.createWalletBalanceRequest()
+            let request = try? builder.createRequest()
             
             #expect(request != nil)
             #expect(request?.url?.absoluteString.contains("kucoin.com") == true)
@@ -120,7 +120,7 @@ struct RequestBuilderTests {
             let credentials = TestFixtures.TestCredentials.kucoin
             let builder = KuCoinAPIRequestBuilder(exchangeType: exchange, creds: credentials)
             
-            let request = builder.createWalletBalanceRequest()
+            let request = try? builder.createRequest()
             let passphrase = request?.value(forHTTPHeaderField: "KC-API-PASSPHRASE")
             
             #expect(passphrase != nil)
@@ -133,7 +133,7 @@ struct RequestBuilderTests {
             let credentials = TestFixtures.TestCredentials.kucoin
             let builder = KuCoinAPIRequestBuilder(exchangeType: exchange, creds: credentials)
             
-            let request = builder.createWalletBalanceRequest()
+            let request = try? builder.createRequest()
             let signature = request?.value(forHTTPHeaderField: "KC-API-SIGN")
             
             #expect(signature != nil)
@@ -148,7 +148,7 @@ struct RequestBuilderTests {
             let credentials = TestFixtures.TestCredentials.kucoin
             let builder = KuCoinAPIRequestBuilder(exchangeType: exchange, creds: credentials)
             
-            let request = builder.createWalletBalanceRequest()
+            let request = try? builder.createRequest()
             
             #expect(request?.url?.path.contains("/api/v1/account-overview") == true)
             #expect(request?.url?.query?.contains("currency=USDT") == true)
@@ -166,7 +166,7 @@ struct RequestBuilderTests {
             let credentials = TestFixtures.TestCredentials.binance
             let builder = BinanceAPIRequestBuilder(exchangeType: exchange, creds: credentials)
             
-            let request = builder.createWalletBalanceRequest()
+            let request = try? builder.createRequest()
             
             #expect(request != nil)
             #expect(request?.httpMethod == "GET")
@@ -181,7 +181,7 @@ struct RequestBuilderTests {
             let credentials = TestFixtures.TestCredentials.binance
             let builder = BinanceAPIRequestBuilder(exchangeType: exchange, creds: credentials)
             
-            let request = builder.createWalletBalanceRequest()
+            let request = try? builder.createRequest()
             
             #expect(request?.url?.query?.contains("timestamp=") == true)
             #expect(request?.url?.query?.contains("recvWindow=5000") == true)
@@ -193,7 +193,7 @@ struct RequestBuilderTests {
             let credentials = TestFixtures.TestCredentials.binance
             let builder = BinanceAPIRequestBuilder(exchangeType: exchange, creds: credentials)
             
-            let request = builder.createWalletBalanceRequest()
+            let request = try? builder.createRequest()
             
             #expect(request?.url?.query?.contains("signature=") == true)
         }
@@ -204,7 +204,7 @@ struct RequestBuilderTests {
             let credentials = TestFixtures.TestCredentials.binance
             let builder = BinanceAPIRequestBuilder(exchangeType: exchange, creds: credentials)
             
-            let request = builder.createWalletBalanceRequest()
+            let request = try? builder.createRequest()
             
             guard let query = request?.url?.query,
                   let signatureRange = query.range(of: "signature="),
@@ -224,7 +224,7 @@ struct RequestBuilderTests {
             let credentials = TestFixtures.TestCredentials.binance
             let builder = BinanceAPIRequestBuilder(exchangeType: exchange, creds: credentials)
             
-            let request = builder.createWalletBalanceRequest()
+            let request = try? builder.createRequest()
             
             // Currently uses testnet - update this test if switching to production
             #expect(request?.url?.absoluteString.contains("testnet.binancefuture.com") == true)
@@ -246,7 +246,7 @@ struct RequestBuilderTests {
             let builder = await APIRequestBuilderFactory.builder(for: exchange, creds: credManager)
             
             #expect(builder != nil)
-            #expect(builder is BybitAPIRequestBuilder)
+            #expect(builder is BybitWalletAPIRequestBuilder)
         }
         
         @Test("Creates KuCoin builder")

@@ -14,34 +14,27 @@ public protocol CredentialManagerProtocol: Actor {
     func deleteCredentials(forAccount account: String) async -> OSStatus
 }
 
-public protocol APIRequestBuilder: LLAPIRequestBuilder {
+public protocol APIRequestBuilder: LLAPIRequestBuilder { }
+
+@MainActor
+struct APIRequestBuilderFactory {
+    static func builder(for exchangeType: ExchangeType, creds: CredentialManagerProtocol) async -> APIRequestBuilder? {
+        let accountName = exchangeType.identifier
+
+        guard let credentials = try? await creds.getCredentials(forAccount: accountName.rawValue) else { return nil }
+
+        switch accountName {
+        case .bybit:
+            return BybitWalletAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
+        case .kucoin:
+            return KuCoinAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
+        case .binance:
+            return BinanceAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
+        default:
+            return BybitWalletAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
+        }
+    }
 }
-
-//public extension APIRequestBuilder {
-//    func createRequest() throws -> URLRequest {
-//        return createWalletBalanceRequest() ?? URLRequest(url: URL(string: "")!)
-//    }
-//}
-
-//@MainActor
-//struct APIRequestBuilderFactory {
-//    static func builder(for exchangeType: ExchangeType, creds: CredentialManagerProtocol) async -> APIRequestBuilder? {
-//        let accountName = exchangeType.identifier
-//
-//        guard let credentials = try? await creds.getCredentials(forAccount: accountName.rawValue) else { return nil }
-//
-//        switch accountName {
-//        case .bybit:
-//            return BybitAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
-//        case .kucoin:
-//            return KuCoinAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
-//        case .binance:
-//            return BinanceAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
-//        default:
-//            return BybitAPIRequestBuilder(exchangeType: exchangeType, creds: credentials)
-//        }
-//    }
-//}
 
 struct BybitAPIKeyInfoAPIRequestBuilder: APIRequestBuilder {
     let exchangeType: ExchangeType

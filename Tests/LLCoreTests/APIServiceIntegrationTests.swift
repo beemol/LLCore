@@ -710,7 +710,7 @@ class TestAPIServiceWrapper {
             throw APIError.invalidRequest
         }
         
-        guard let request = requestBuilder.createWalletBalanceRequest() else {
+        guard let request = try? requestBuilder.createRequest() else {
             throw APIError.invalidRequest
         }
         
