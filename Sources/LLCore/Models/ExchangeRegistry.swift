@@ -16,7 +16,6 @@ public protocol ExchangeRegistryProtocol: Sendable {
     @available(*, deprecated, message: "Use parser(for:endpointType:) instead")
     func parser(for identifier: ExchangeIdentifier, walletType: WalletType) -> (any WalletDataParserProtocol)?
     
-    @available(macOS 13.0.0, *)
     func parser<T>(for identifier: ExchangeIdentifier, endpointType: EndpointType) -> (any LLResponseParserProtocol<T>)?
     
     func errorDetector(for identifier: ExchangeIdentifier) -> LLDomainErrorDetector?
@@ -74,7 +73,6 @@ public final class ExchangeRegistry: ExchangeRegistryProtocol, @unchecked Sendab
         return parserFactories[identifier]?(.wallet(walletType)) as? any WalletDataParserProtocol
     }
     
-    @available(macOS 13.0.0, *)
     public func parser<T>(for identifier: ExchangeIdentifier, endpointType: EndpointType) -> (any LLResponseParserProtocol<T>)? {
         parserFactories[identifier]?(endpointType) as? any LLResponseParserProtocol<T>
     }

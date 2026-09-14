@@ -560,12 +560,6 @@ struct ModelTests {
     @Suite("ExchangeRegistry")
     struct ExchangeRegistryTests {
         
-        @Test("Shared instance exists")
-        func testSharedInstance() {
-            let registry = ExchangeRegistry.shared
-            #expect(registry != nil)
-        }
-        
         @Test("Returns capabilities for known exchanges")
         func testReturnsCapabilities() {
             let bybitCaps = ExchangeRegistry.shared.capabilities(for: .bybit)
