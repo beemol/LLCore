@@ -16,10 +16,10 @@ public protocol ExchangeRegistryProtocol: Sendable {
     @available(*, deprecated, message: "Use parser(for:endpointType:) instead")
     func parser(for identifier: ExchangeIdentifier, walletType: WalletType) -> (any WalletDataParserProtocol)?
     
-    func parser<T>(for identifier: ExchangeIdentifier, endpointType: EndpointType) -> (any LLResponseParserProtocol<T>)?
+    func parser<E: Endpoint>(for identifier: ExchangeIdentifier, endpoint: E) -> (any LLResponseParserProtocol<E.Output>)?
     
     func errorDetector(for identifier: ExchangeIdentifier) -> LLDomainErrorDetector?
-    func requestBuilder(for config: any ExchangeType, credentials: Credentials, endpointType: EndpointType) -> APIRequestBuilder?
+    func requestBuilder(for config: any ExchangeType, credentials: Credentials, endpointType: EndpointID) -> APIRequestBuilder?
     
     // MARK: - Write (for setup/testing)
     func addOrUpdateEnvironment(with url: String, for identifier: ExchangeIdentifier, environment: APIEnvironment)
@@ -29,9 +29,9 @@ public protocol ExchangeRegistryProtocol: Sendable {
     
     func setCapabilities(_ caps: ExchangeCapabilities, for identifier: ExchangeIdentifier)
     
-    func registerParserFactory(_ factory: @escaping (EndpointType) -> any LLResponseParserProtocol, for identifier: ExchangeIdentifier)
+    func registerParserFactory(_ factory: @escaping (EndpointID) -> any LLResponseParserProtocol, for identifier: ExchangeIdentifier)
     func registerErrorDetector(_ detector: LLDomainErrorDetector, for identifier: ExchangeIdentifier)
-    func registerRequestBuilderFactory(_ factory: @escaping (any ExchangeType, Credentials, EndpointType) -> APIRequestBuilder, for identifier: ExchangeIdentifier)
+    func registerRequestBuilderFactory(_ factory: @escaping (any ExchangeType, Credentials, EndpointID) -> APIRequestBuilder, for identifier: ExchangeIdentifier)
 }
 
 // TODO: make it an Actor or hanlde safe concurrency (good for now since we don't expose capabilities {get set} )
@@ -45,10 +45,10 @@ public final class ExchangeRegistry: ExchangeRegistryProtocol, @unchecked Sendab
     
     private var capabilities: [ExchangeIdentifier: ExchangeCapabilities] = [:]
     
-    private var parserFactories: [ExchangeIdentifier: (EndpointType) -> any LLResponseParserProtocol] = [:]
+    private var parserFactories: [ExchangeIdentifier: (EndpointID) -> any LLResponseParserProtocol] = [:]
     
     private var errorDetectors: [ExchangeIdentifier: LLDomainErrorDetector] = [:]
-    private var requestBuilderFactories: [ExchangeIdentifier: (any ExchangeType, Credentials, EndpointType) -> APIRequestBuilder] = [:]
+    private var requestBuilderFactories: [ExchangeIdentifier: (any ExchangeType, Credentials, EndpointID) -> APIRequestBuilder] = [:]
     
     private init() {
         // Defaults - can be overridden
@@ -73,15 +73,15 @@ public final class ExchangeRegistry: ExchangeRegistryProtocol, @unchecked Sendab
         return parserFactories[identifier]?(.wallet(walletType)) as? any WalletDataParserProtocol
     }
     
-    public func parser<T>(for identifier: ExchangeIdentifier, endpointType: EndpointType) -> (any LLResponseParserProtocol<T>)? {
-        parserFactories[identifier]?(endpointType) as? any LLResponseParserProtocol<T>
+    public func parser<E: Endpoint>(for identifier: ExchangeIdentifier, endpoint: E) -> (any LLResponseParserProtocol<E.Output>)? {
+        parserFactories[identifier]?(endpoint.id) as? any LLResponseParserProtocol<E.Output>
     }
     
     public func errorDetector(for identifier: ExchangeIdentifier) -> LLDomainErrorDetector? {
         errorDetectors[identifier]
     }
     
-    public func requestBuilder(for config: any ExchangeType, credentials: Credentials, endpointType: EndpointType) -> APIRequestBuilder? {
+    public func requestBuilder(for config: any ExchangeType, credentials: Credentials, endpointType: EndpointID) -> APIRequestBuilder? {
         requestBuilderFactories[config.identifier]?(config, credentials, endpointType)
     }
     
@@ -108,7 +108,7 @@ public final class ExchangeRegistry: ExchangeRegistryProtocol, @unchecked Sendab
         capabilities[identifier] = caps
     }
     
-    public func registerParserFactory(_ factory: @escaping (EndpointType) -> any LLResponseParserProtocol, for identifier: ExchangeIdentifier) {
+    public func registerParserFactory(_ factory: @escaping (EndpointID) -> any LLResponseParserProtocol, for identifier: ExchangeIdentifier) {
         parserFactories[identifier] = factory
     }
     
@@ -116,7 +116,7 @@ public final class ExchangeRegistry: ExchangeRegistryProtocol, @unchecked Sendab
         errorDetectors[identifier] = detector
     }
     
-    public func registerRequestBuilderFactory(_ factory: @escaping (any ExchangeType, Credentials, EndpointType) -> APIRequestBuilder,
+    public func registerRequestBuilderFactory(_ factory: @escaping (any ExchangeType, Credentials, EndpointID) -> APIRequestBuilder,
                                               for identifier: ExchangeIdentifier) {
         requestBuilderFactories[identifier] = factory
     }

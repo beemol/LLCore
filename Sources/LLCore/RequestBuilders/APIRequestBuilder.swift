@@ -42,7 +42,7 @@ struct BybitAPIKeyInfoAPIRequestBuilder: APIRequestBuilder {
     
     func createRequest() throws -> URLRequest {
         // Get the endpoint from your capabilities
-        let urlString = exchangeType.baseURL + exchangeType.getEndpointString(for: .apiKeyInfo)
+        let urlString = exchangeType.baseURL + APIKeyInfoEndpoint().path(for: exchangeType)
         guard let url = URL(string: urlString) else {
             throw APIError.invalidRequest
         }
@@ -79,7 +79,7 @@ struct BybitWalletAPIRequestBuilder: APIRequestBuilder {
     func createRequest() throws -> URLRequest {
         // Use endpoint as-is; it already contains the accountType query for spot/unified
         let walletType = exchangeType.walletType
-        let urlString = exchangeType.baseURL + exchangeType.getEndpointString(for: .wallet(walletType))
+        let urlString = exchangeType.baseURL + WalletEndpoint(walletType).path(for: exchangeType)
         guard let url = URL(string: urlString) else {
             throw APIError.invalidRequest
         }
@@ -114,7 +114,7 @@ struct KuCoinAPIRequestBuilder: APIRequestBuilder {
     
     func createRequest() throws -> URLRequest {
         let walletType = exchangeType.walletType
-        let endpoint = exchangeType.getEndpointString(for: .wallet(walletType))
+        let endpoint = WalletEndpoint(walletType).path(for: exchangeType)
         let urlString = exchangeType.baseURL + endpoint
         
         guard let url = URL(string: urlString) else {
