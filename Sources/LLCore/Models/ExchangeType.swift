@@ -15,11 +15,6 @@ public struct ExchangeIdentifier: RawRepresentable, Hashable, Sendable, Expressi
     public init(stringLiteral value: String) {
         self.rawValue = value
     }
-    
-    // Known exchanges - compiler-checked
-    public static let bybit = ExchangeIdentifier(rawValue: "bybit")
-    public static let kucoin = ExchangeIdentifier(rawValue: "kucoin")
-    public static let binance = ExchangeIdentifier(rawValue: "binance")
 }
 
 public enum APIEnvironment: String, Sendable, Hashable {
@@ -43,31 +38,6 @@ public protocol Endpoint: Sendable {
     associatedtype Output: Sendable
     var id: EndpointID { get }
     func path(for exchange: any ExchangeType) -> String
-}
-
-public struct WalletEndpoint: Endpoint {
-    public typealias Output = WalletData
-    public let walletType: WalletType
-    public var id: EndpointID { .wallet(walletType) }
-
-    public func path(for exchange: any ExchangeType) -> String {
-        exchange.getEndpointString(for: id)
-    }
-
-    public init(_ walletType: WalletType) {
-        self.walletType = walletType
-    }
-}
-
-public struct APIKeyInfoEndpoint: Endpoint {
-    public typealias Output = ApiKeyInfoData
-    public var id: EndpointID { .apiKeyInfo }
-
-    public func path(for exchange: any ExchangeType) -> String {
-        exchange.getEndpointString(for: id)
-    }
-
-    public init() {}
 }
 
 public struct ExchangeCapabilities {

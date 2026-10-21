@@ -7,19 +7,20 @@
 
 import LLApiService
 
+//public protocol ExchangeCapabilitiesProviding: Sendable {
+//    func capabilities(for identifier: ExchangeIdentifier) -> ExchangeCapabilities?
+//}
+
 public protocol ExchangeRegistryProtocol: Sendable {
     // MARK: Read
     var availableExchanges: [ExchangeIdentifier] { get }
     
     func capabilities(for identifier: ExchangeIdentifier) -> ExchangeCapabilities?
     
-    @available(*, deprecated, message: "Use parser(for:endpointType:) instead")
-    func parser(for identifier: ExchangeIdentifier, walletType: WalletType) -> (any WalletDataParserProtocol)?
-    
     func parser<E: Endpoint>(for identifier: ExchangeIdentifier, endpoint: E) -> (any LLResponseParserProtocol<E.Output>)?
     
     func errorDetector(for identifier: ExchangeIdentifier) -> LLDomainErrorDetector?
-    func requestBuilder(for config: any ExchangeType, credentials: Credentials, endpointType: EndpointID) -> APIRequestBuilder?
+    func requestBuilder(for config: any ExchangeType, credentials: Credentials, endpointType: EndpointID) -> LLAPIRequestBuilder?
     
     // MARK: - Write (for setup/testing)
     func addOrUpdateEnvironment(with url: String, for identifier: ExchangeIdentifier, environment: APIEnvironment)
@@ -31,7 +32,7 @@ public protocol ExchangeRegistryProtocol: Sendable {
     
     func registerParserFactory(_ factory: @escaping (EndpointID) -> any LLResponseParserProtocol, for identifier: ExchangeIdentifier)
     func registerErrorDetector(_ detector: LLDomainErrorDetector, for identifier: ExchangeIdentifier)
-    func registerRequestBuilderFactory(_ factory: @escaping (any ExchangeType, Credentials, EndpointID) -> APIRequestBuilder, for identifier: ExchangeIdentifier)
+    func registerRequestBuilderFactory(_ factory: @escaping (any ExchangeType, Credentials, EndpointID) -> LLAPIRequestBuilder, for identifier: ExchangeIdentifier)
 }
 
 // TODO: make it an Actor or hanlde safe concurrency (good for now since we don't expose capabilities {get set} )
@@ -48,16 +49,7 @@ public final class ExchangeRegistry: ExchangeRegistryProtocol, @unchecked Sendab
     private var parserFactories: [ExchangeIdentifier: (EndpointID) -> any LLResponseParserProtocol] = [:]
     
     private var errorDetectors: [ExchangeIdentifier: LLDomainErrorDetector] = [:]
-    private var requestBuilderFactories: [ExchangeIdentifier: (any ExchangeType, Credentials, EndpointID) -> APIRequestBuilder] = [:]
-    
-    private init() {
-        // Defaults - can be overridden
-        capabilities[.bybit] = defaultCapabilitiesForBybit()
-        capabilities[.kucoin] = defaultCapabilitiesForKucoin()
-        
-        registerBybitDefaults()
-        registerKuCoinDefaults()
-    }
+    private var requestBuilderFactories: [ExchangeIdentifier: (any ExchangeType, Credentials, EndpointID) -> LLAPIRequestBuilder] = [:]
     
     // MARK: - Read
     public var availableExchanges: [ExchangeIdentifier] {
@@ -68,11 +60,6 @@ public final class ExchangeRegistry: ExchangeRegistryProtocol, @unchecked Sendab
         capabilities[identifier]
     }
     
-    @available(*, deprecated, message: "Use parser(for:endpointType:) instead")
-    public func parser(for identifier: ExchangeIdentifier, walletType: WalletType) -> (any WalletDataParserProtocol)? {
-        return parserFactories[identifier]?(.wallet(walletType)) as? any WalletDataParserProtocol
-    }
-    
     public func parser<E: Endpoint>(for identifier: ExchangeIdentifier, endpoint: E) -> (any LLResponseParserProtocol<E.Output>)? {
         parserFactories[identifier]?(endpoint.id) as? any LLResponseParserProtocol<E.Output>
     }
@@ -81,7 +68,7 @@ public final class ExchangeRegistry: ExchangeRegistryProtocol, @unchecked Sendab
         errorDetectors[identifier]
     }
     
-    public func requestBuilder(for config: any ExchangeType, credentials: Credentials, endpointType: EndpointID) -> APIRequestBuilder? {
+    public func requestBuilder(for config: any ExchangeType, credentials: Credentials, endpointType: EndpointID) -> LLAPIRequestBuilder? {
         requestBuilderFactories[config.identifier]?(config, credentials, endpointType)
     }
     
@@ -116,96 +103,8 @@ public final class ExchangeRegistry: ExchangeRegistryProtocol, @unchecked Sendab
         errorDetectors[identifier] = detector
     }
     
-    public func registerRequestBuilderFactory(_ factory: @escaping (any ExchangeType, Credentials, EndpointID) -> APIRequestBuilder,
+    public func registerRequestBuilderFactory(_ factory: @escaping (any ExchangeType, Credentials, EndpointID) -> LLAPIRequestBuilder,
                                               for identifier: ExchangeIdentifier) {
         requestBuilderFactories[identifier] = factory
-    }
-    
-    // MARK: - Default Registrations
-    private func registerBybitDefaults() {
-        capabilities[.bybit] = defaultCapabilitiesForBybit()
-        
-        registerParserFactory({ endpointType in
-            switch endpointType {
-            case .wallet(_):
-                return BybitUnifiedWalletDataParser()
-            case .apiKeyInfo:
-                return ByBitApiKeyInfoParser()
-            }
-        }, for: .bybit)
-        
-        registerErrorDetector(BybitErrorDetector(), for: .bybit)
-        
-        registerRequestBuilderFactory({ config, creds, endpointType in
-            switch endpointType {
-            case .wallet(_):
-                return BybitWalletAPIRequestBuilder(exchangeType: config, creds: creds)
-            case .apiKeyInfo:
-                return BybitAPIKeyInfoAPIRequestBuilder(exchangeType: config, creds: creds)
-            }
-        }, for: .bybit)
-    }
-    
-    private func registerKuCoinDefaults() {
-        capabilities[.kucoin] = defaultCapabilitiesForKucoin()
-        
-        registerParserFactory({ endpointType in
-            switch endpointType {
-            case .wallet(let walletType):
-                return KuCoinWalletDataParser(walletType: walletType)
-            case .apiKeyInfo:
-                // TODO:
-                return KuCoinWalletDataParser() // temporary fallback
-            }
-        }, for: .kucoin)
-        
-        registerErrorDetector(KucoinErrorDetector(), for: .kucoin)
-        
-        registerRequestBuilderFactory({ config, creds, endpointType in
-            KuCoinAPIRequestBuilder(exchangeType: config, creds: creds)
-        }, for: .kucoin)
-    }
-    
-    // helpers
-    private func defaultCapabilitiesForBybit() -> ExchangeCapabilities {
-        ExchangeCapabilities(
-            urls: [
-                .production: "https://api.bybit.com",
-                .testnet: "https://api-testnet.bybit.com",
-                .demo: "https://api-demo.bybit.com"
-            ],
-//            walletEndpoints: [
-//                .unified: "/v5/account/wallet-balance?accountType=UNIFIED",
-//                .spot: "/v5/account/wallet-balance?accountType=SPOT",
-//                .futures: "/v5/account/wallet-balance?accountType=CONTRACT"
-//            ],
-            endpoints: [
-                .wallet(.unified): "/v5/account/wallet-balance?accountType=UNIFIED",
-                .wallet(.spot): "/v5/account/wallet-balance?accountType=SPOT",
-                .wallet(.futures): "/v5/account/wallet-balance?accountType=CONTRACT",
-                .apiKeyInfo: "/v5/user/query-api"
-            ]
-        )
-    }
-    
-    private func defaultCapabilitiesForKucoin() -> ExchangeCapabilities {
-        ExchangeCapabilities(
-            urls: [
-                .production: "https://api-futures.kucoin.com",
-                .testnet: "https://api-sandbox-futures.kucoin.com",
-                .demo: "https://api-sandbox-futures.kucoin.com"
-            ],
-//            walletEndpoints: [
-//                .futures: "/api/v1/account-overview?currency=USDT",
-//                .spot: "/api/v1/accounts?type=main",
-//                .unified: "/api/v1/accounts",
-//            ],
-            endpoints: [
-                .wallet(.unified): "/api/v1/accounts",
-                .wallet(.spot): "/api/v1/accounts?type=main",
-                .wallet(.futures): "/api/v1/account-overview?currency=USDT",
-                .apiKeyInfo: "/api/v1/user-info/all-sub-users"
-            ]
-        )
     }
 }
