@@ -86,7 +86,6 @@ public struct Exchange: ExchangeType, Equatable, Hashable {
         self.registry = registry
     }
     
-    // Everything from registry - no hardcoded values!
     public var baseURL: String {
         registry.capabilities(for: identifier)?.urls[environment] ?? ""
     }
