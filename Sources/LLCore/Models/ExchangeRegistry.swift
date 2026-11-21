@@ -7,49 +7,49 @@
 
 import LLApiService
 
-//public protocol ExchangeCapabilitiesProviding: Sendable {
-//    func capabilities(for identifier: ExchangeIdentifier) -> ExchangeCapabilities?
-//}
-
-public protocol ExchangeRegistryProtocol: Sendable {
-    // MARK: Read
+public protocol ExchangeRegistryProtocol {
+    
     var availableExchanges: [ExchangeIdentifier] { get }
     
     func capabilities(for identifier: ExchangeIdentifier) -> ExchangeCapabilities?
+    func configuration(for exchange: Exchange) -> ExchangeConfiguration?
     
     func parser<E: Endpoint>(for identifier: ExchangeIdentifier, endpoint: E) -> (any LLResponseParserProtocol<E.Output>)?
-    
     func errorDetector(for identifier: ExchangeIdentifier) -> LLDomainErrorDetector?
-    func requestBuilder(for config: any ExchangeType, credentials: Credentials, endpointType: EndpointID) -> LLAPIRequestBuilder?
-    
-    // MARK: - Write (for setup/testing)
-    func addOrUpdateEnvironment(with url: String, for identifier: ExchangeIdentifier, environment: APIEnvironment)
-    func addOrUpdateWalletType(with endpoint: String, for identifier: ExchangeIdentifier, walletType: WalletType)
-    func removeEnvironment(_ environment: APIEnvironment, for identifier: ExchangeIdentifier)
-    func removeWalletType(_ walletType: WalletType, for identifier: ExchangeIdentifier)
-    
-    func setCapabilities(_ caps: ExchangeCapabilities, for identifier: ExchangeIdentifier)
-    
-    func registerParserFactory(_ factory: @escaping (EndpointID) -> any LLResponseParserProtocol, for identifier: ExchangeIdentifier)
-    func registerErrorDetector(_ detector: LLDomainErrorDetector, for identifier: ExchangeIdentifier)
-    func registerRequestBuilderFactory(_ factory: @escaping (any ExchangeType, Credentials, EndpointID) -> LLAPIRequestBuilder, for identifier: ExchangeIdentifier)
+    func requestBuilder(for identifier: ExchangeIdentifier, configuration: ExchangeConfiguration, credentials: Credentials, endpointType: EndpointID) -> LLAPIRequestBuilder?
 }
 
-// TODO: make it an Actor or hanlde safe concurrency (good for now since we don't expose capabilities {get set} )
-/// Usage
-/// Option A: Change URL at App Startup
-///   ExchangeRegistry.shared.addEnvironment(with: "https://api-demo-v2.bybit.com",  for: "bybit", environment: .demo)
-/// Option B: Customize capabilities at startup (e.g., enable more wallet types)
-///   ExchangeRegistry.shared.setCapabilities(ExchangeCapabilities(...))
-public final class ExchangeRegistry: ExchangeRegistryProtocol, @unchecked Sendable {
-    public static let shared = ExchangeRegistry()
+extension ExchangeRegistry {
+    public func configuration(for exchange: Exchange) -> ExchangeConfiguration? {
+        guard let capabilities = capabilities(for: exchange.identifier),
+              let baseURL = capabilities.urls[exchange.environment]
+        else {
+            return nil
+        }
+
+        return ExchangeConfiguration(baseURL: baseURL,
+                                   endpoints: capabilities.endpoints)
+    }
+}
+
+public final class ExchangeRegistry: ExchangeRegistryProtocol {
     
-    private var capabilities: [ExchangeIdentifier: ExchangeCapabilities] = [:]
-    
-    private var parserFactories: [ExchangeIdentifier: (EndpointID) -> any LLResponseParserProtocol] = [:]
-    
-    private var errorDetectors: [ExchangeIdentifier: LLDomainErrorDetector] = [:]
-    private var requestBuilderFactories: [ExchangeIdentifier: (any ExchangeType, Credentials, EndpointID) -> LLAPIRequestBuilder] = [:]
+    private let capabilities: [ExchangeIdentifier: ExchangeCapabilities]
+    private let parserFactories: [ExchangeIdentifier: @Sendable (EndpointID) -> any LLResponseParserProtocol]
+    private let errorDetectors: [ExchangeIdentifier: LLDomainErrorDetector]
+    private let requestBuilderFactories: [ExchangeIdentifier: @Sendable (ExchangeConfiguration, Credentials, EndpointID) -> LLAPIRequestBuilder]
+
+    public init(
+        capabilities: [ExchangeIdentifier: ExchangeCapabilities],
+        parserFactories: [ExchangeIdentifier: @Sendable (EndpointID) -> any LLResponseParserProtocol],
+        errorDetectors: [ExchangeIdentifier: LLDomainErrorDetector],
+        requestBuilderFactories: [ExchangeIdentifier: @Sendable (ExchangeConfiguration, Credentials, EndpointID) -> LLAPIRequestBuilder]
+    ) {
+        self.capabilities = capabilities
+        self.parserFactories = parserFactories
+        self.errorDetectors = errorDetectors
+        self.requestBuilderFactories = requestBuilderFactories
+    }
     
     // MARK: - Read
     public var availableExchanges: [ExchangeIdentifier] {
@@ -68,43 +68,40 @@ public final class ExchangeRegistry: ExchangeRegistryProtocol, @unchecked Sendab
         errorDetectors[identifier]
     }
     
-    public func requestBuilder(for config: any ExchangeType, credentials: Credentials, endpointType: EndpointID) -> LLAPIRequestBuilder? {
-        requestBuilderFactories[config.identifier]?(config, credentials, endpointType)
+    public func requestBuilder(for identifier: ExchangeIdentifier, configuration: ExchangeConfiguration, credentials: Credentials, endpointType: EndpointID) -> LLAPIRequestBuilder? {
+        requestBuilderFactories[identifier]?(configuration, credentials, endpointType)
     }
     
     // MARK: - Modify API (for client apps)
-    public func addOrUpdateEnvironment(with url: String, for identifier: ExchangeIdentifier, environment: APIEnvironment) {
-        capabilities[identifier]?.urls[environment] = url
-    }
-
-    public func addOrUpdateWalletType(with endpoint: String, for identifier: ExchangeIdentifier, walletType: WalletType) {
-        capabilities[identifier]?.endpoints[.wallet(walletType)] = endpoint
-        //capabilities[identifier]?.walletEndpoints[walletType] = endpoint
-    }
-    
-    public func removeEnvironment(_ environment: APIEnvironment, for identifier: ExchangeIdentifier) {
-        capabilities[identifier]?.urls.removeValue(forKey: environment)
-    }
-
-    public func removeWalletType(_ walletType: WalletType, for identifier: ExchangeIdentifier) {
-        capabilities[identifier]?.endpoints.removeValue(forKey: .wallet(walletType))
-        //capabilities[identifier]?.walletEndpoints.removeValue(forKey: walletType)
-    }
-    
-    public func setCapabilities(_ caps: ExchangeCapabilities, for identifier: ExchangeIdentifier) {
-        capabilities[identifier] = caps
-    }
-    
-    public func registerParserFactory(_ factory: @escaping (EndpointID) -> any LLResponseParserProtocol, for identifier: ExchangeIdentifier) {
-        parserFactories[identifier] = factory
-    }
-    
-    public func registerErrorDetector(_ detector: LLDomainErrorDetector, for identifier: ExchangeIdentifier) {
-        errorDetectors[identifier] = detector
-    }
-    
-    public func registerRequestBuilderFactory(_ factory: @escaping (any ExchangeType, Credentials, EndpointID) -> LLAPIRequestBuilder,
-                                              for identifier: ExchangeIdentifier) {
-        requestBuilderFactories[identifier] = factory
-    }
+//    public func addOrUpdateEnvironment(with url: String, for identifier: ExchangeIdentifier, environment: APIEnvironment) {
+//        capabilities[identifier]?.urls[environment] = url
+//    }
+//
+//    public func addOrUpdateWalletType(with endpoint: String, for identifier: ExchangeIdentifier, walletType: WalletType) {
+//        capabilities[identifier]?.endpoints[.wallet(walletType)] = endpoint
+//    }
+//    
+//    public func removeEnvironment(_ environment: APIEnvironment, for identifier: ExchangeIdentifier) {
+//        capabilities[identifier]?.urls.removeValue(forKey: environment)
+//    }
+//
+//    public func removeWalletType(_ walletType: WalletType, for identifier: ExchangeIdentifier) {
+//        capabilities[identifier]?.endpoints.removeValue(forKey: .wallet(walletType))
+//    }
+//    
+//    public func setCapabilities(_ caps: ExchangeCapabilities, for identifier: ExchangeIdentifier) {
+//        capabilities[identifier] = caps
+//    }
+//    
+//    public func registerParserFactory(_ factory: @escaping (EndpointID) -> any LLResponseParserProtocol, for identifier: ExchangeIdentifier) {
+//        parserFactories[identifier] = factory
+//    }
+//    
+//    public func registerErrorDetector(_ detector: LLDomainErrorDetector, for identifier: ExchangeIdentifier) {
+//        errorDetectors[identifier] = detector
+//    }
+//    
+//    public func registerRequestBuilderFactory(_ factory: @escaping (any Exchange, Credentials, EndpointID) -> LLAPIRequestBuilder, for identifier: ExchangeIdentifier) {
+//        requestBuilderFactories[identifier] = factory
+//    }
 }
